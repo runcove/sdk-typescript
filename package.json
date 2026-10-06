@@ -1,6 +1,6 @@
 {
   "name": "@runcove/sdk",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "TypeScript SDK for the Cove external REST API (bearer key or Warpgate ticket auth)",
   "license": "Apache-2.0",
   "repository": {
