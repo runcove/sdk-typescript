@@ -57,6 +57,7 @@
   "overrides": {
     "@hey-api/json-schema-ref-parser": {
       "js-yaml": "4.3.2"
-    }
+    },
+    "@modelcontextprotocol/client": "2.2.0"
   }
 }
