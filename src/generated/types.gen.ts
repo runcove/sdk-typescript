@@ -684,6 +684,7 @@ export type CliTooOldBody = {
  * breaks the cross-crate roundtrip pinned by `unit_clone_request_*`.
  */
 export type CloneRequest = {
+    auto_pause_policy?: null | AutoPausePolicy;
     /**
      * The clone's name, under the same rule as a created VM's: 3-30
      * characters of lowercase ASCII letters, digits and hyphens, not starting
@@ -698,6 +699,16 @@ export type CloneRequest = {
      * `Uuid` and surfaces a 400 on bad syntax.
      */
     source_checkpoint_id?: string | null;
+    /**
+     * Tags for the clone, replacing the source's. Omitted, the clone gets
+     * the source's tags; an empty object gives it none. Each entry obeys
+     * the same rules as setting a tag, and at most 50 are allowed; a bad
+     * one is refused with 400 before anything is cloned.
+     */
+    tags?: {
+        [key: string]: string;
+    } | null;
+    ttl_policy?: null | TtlPolicy;
 };
 
 /**
@@ -2544,7 +2555,15 @@ export type VmDetail = {
     agent_version?: string | null;
     auto_pause_policy: AutoPausePolicy;
     created_at: string;
+    /**
+     * Memory in MiB the VM has now: what `free` inside the guest reports
+     * as its total, give or take what the kernel keeps for itself. Quota is
+     * charged on this.
+     */
     current_memory_mb?: number;
+    /**
+     * vCPUs the VM has now. Quota is charged on this.
+     */
     current_vcpus?: number;
     degraded?: boolean;
     degraded_reason?: string | null;
@@ -2559,8 +2578,19 @@ export type VmDetail = {
     ip_address?: string | null;
     mac_address: string;
     max_life_expires_in_secs?: number | null;
+    /**
+     * Most memory in MiB a resize can give the VM while it runs.
+     */
     memory_max_mb?: number;
+    /**
+     * Memory in MiB the VM boots with on a cold start. Not what the VM has
+     * now: after a resize, or for a clone of a VM that was resized,
+     * `current_memory_mb` is the memory the guest holds.
+     */
     memory_mb: number;
+    /**
+     * Least memory in MiB a resize can take the VM down to.
+     */
     memory_min_mb?: number;
     name: string;
     state: VmState;
@@ -2569,8 +2599,18 @@ export type VmDetail = {
     };
     ttl_policy?: TtlPolicy;
     updated_at: string;
+    /**
+     * vCPUs the VM boots with on a cold start. The VM can be running with
+     * more after a resize: `current_vcpus` is what it has now.
+     */
     vcpus: number;
+    /**
+     * Most vCPUs a resize can give the VM while it runs.
+     */
     vcpus_max?: number;
+    /**
+     * Fewest vCPUs a resize can take the VM down to.
+     */
     vcpus_min?: number;
     vm_id: string;
 };
@@ -9200,7 +9240,7 @@ export type CloneVmData = {
 
 export type CloneVmErrors = {
     /**
-     * `source_checkpoint_id` is not a valid UUID, or `new_vm_name` is refused: outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen) or held by a bastion target this server may not take over. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a bad `source_checkpoint_id` answers the `ApiError` envelope with `validation_failed`.
+     * `source_checkpoint_id` is not a valid UUID, or `new_vm_name` is refused: outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen) or held by a bastion target this server may not take over. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a bad `source_checkpoint_id` answers the `ApiError` envelope with `validation_failed`, and a bad entry in `tags` answers it with the tag code (`tag_invalid_key`, `tag_reserved_prefix`, `tag_invalid_value`).
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
@@ -9218,9 +9258,13 @@ export type CloneVmErrors = {
      */
     404: ApiError;
     /**
-     * The new name is already taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources. The two answer with different bodies, so the schema is a union of both: a state/name conflict returns the `ApiError` envelope, a denial returns a `DenyReason` carrying the numbers behind the refusal.
+     * The new name is already taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`). The two answer with different bodies, so the schema is a union of both: a state/name conflict returns the `ApiError` envelope, a denial returns a `DenyReason` carrying the numbers behind the refusal.
      */
     409: VmConflictResponse;
+    /**
+     * An override is out of bounds (`validation_failed`): in `ttl_policy`, an `on_stop` that deletes after a delay needs a delay of at least 60 seconds, and `max_lifetime_secs` must be absent or at least 3600; in `auto_pause_policy`, `idle_timeout_secs` must be between 60 and 86400.
+     */
+    422: ApiError;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
