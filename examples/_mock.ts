@@ -28,8 +28,14 @@
  * stopped VM and cannot be cloned; a full one wakes only a hibernated VM. A checkpoint keeps
  * a copy of the guest's files, so waking from it or cloning it brings them back, and one a
  * live clone was made from cannot be deleted (409). Tags filter the VM list, ports must be in the server's default allowed list, and a port's URL has the
- * server's shape. `sdk/python/examples/_mock.py` is the same fake for the Python examples.
+ * server's shape. It serves a VM's tags too (the same tags the list filters on), and runs
+ * `client.spotlight`'s apply script for real in effect: it extracts the uploaded tarball and
+ * mirrors it onto the destination with delete semantics and the protect entries the script was
+ * given, so a wrong destination or protect list fails the spotlight example.
+ * `sdk/python/examples/_mock.py` is the same fake for the Python examples.
  */
+
+import { gunzipSync } from "node:zlib";
 
 type GuestResult = { stdout: string; stderr: string; code: number; timedOut?: number };
 type Files = Map<string, string>;
@@ -39,8 +45,13 @@ type Dirs = Set<string>;
  * what `git add -A` last staged (null until then), both keyed by their path in the tree.
  */
 type Repo = { head: Files; index: Files | null };
-/** One fake guest: its file system, the web servers running in it (port to directory), and its git work trees. */
-type Guest = { files: Files; dirs: Dirs; serving: Map<number, string>; repos: Map<string, Repo> };
+/** Each uploaded file's raw bytes, beside its text in `Files` (a tarball is not text). */
+type Blobs = Map<string, Uint8Array>;
+/**
+ * One fake guest: its file system (with each upload's raw bytes), the web servers running in it
+ * (port to directory), and its git work trees.
+ */
+type Guest = { files: Files; dirs: Dirs; blobs: Blobs; serving: Map<number, string>; repos: Map<string, Repo> };
 
 const ok = (stdout = "", stderr = ""): GuestResult => ({ stdout, stderr, code: 0 });
 const fail = (stderr: string, code = 1): GuestResult => ({ stdout: "", stderr, code });
@@ -59,6 +70,7 @@ const isPrime = (n: number) => {
  * holds what `/run/cove/login-env.sh` exports, a plain `sh -c`'s nothing.
  */
 function runShell(script: string, args: string[], guest: Guest, deadline: number, env: Map<string, string> = new Map()): GuestResult {
+  if (script.startsWith("# cove spotlight apply v2")) return spotlightApply(args, guest);
   const { files, dirs } = guest;
   if (script.includes("cat /root/in/*.csv") && script.includes("> /root/out/totals.csv")) {
     const totals = new Map<string, number>();
@@ -132,6 +144,85 @@ function runShell(script: string, args: string[], guest: Guest, deadline: number
 /** Mark `dir` and every directory above it as existing. */
 function addDirs(dirs: Dirs, dir: string): void {
   for (let at = dir; at !== ""; at = at.slice(0, at.lastIndexOf("/"))) dirs.add(at);
+}
+
+/**
+ * The regular files and symlinks of a tar archive (ustar, with pax headers for long names), as
+ * path -> [text, size]; a symlink's text is its target, as the fake guest has no links.
+ */
+function untar(archive: Uint8Array): Map<string, [string, number]> {
+  const out = new Map<string, [string, number]>();
+  const dec = new TextDecoder();
+  const field = (h: Uint8Array, at: number, n: number) => dec.decode(h.subarray(at, at + n)).replace(/\0.*$/s, "");
+  let pax = new Map<string, string>();
+  for (let at = 0; at + 512 <= archive.length; ) {
+    const h = archive.subarray(at, at + 512);
+    if (h.every((b) => b === 0)) break;
+    const size = parseInt(field(h, 124, 12).trim() || "0", 8);
+    const type = field(h, 156, 1) || "0";
+    const data = archive.subarray(at + 512, at + 512 + size);
+    at += 512 + Math.ceil(size / 512) * 512;
+    if (type === "x") {
+      pax = new Map(dec.decode(data).split("\n").filter(Boolean).map((r) => r.slice(r.indexOf(" ") + 1).split(/=(.*)/s).slice(0, 2) as [string, string]));
+      continue;
+    }
+    const prefix = field(h, 345, 155);
+    const path = pax.get("path") ?? (prefix ? `${prefix}/${field(h, 0, 100)}` : field(h, 0, 100));
+    if (type === "0") out.set(path, [dec.decode(data), size]);
+    if (type === "2") out.set(path, [pax.get("linkpath") ?? field(h, 157, 100), 0]);
+    pax = new Map();
+  }
+  return out;
+}
+
+/**
+ * Is `rel` (a path under the destination) kept by one of `protect`, rsync protect patterns: a bare
+ * name matches at any depth, a trailing `/` matches a directory only, a leading `/` anchors;
+ * everything below a match is kept too.
+ */
+function isProtected(rel: string, protect: string[]): boolean {
+  const parts = rel.split("/");
+  return protect.some((entry) => {
+    const dirOnly = entry.endsWith("/");
+    const anchored = entry.startsWith("/");
+    const pat = entry.replace(/^\/|\/$/g, "").split("/");
+    for (let end = pat.length; end <= parts.length; end++) {
+      if (anchored && end !== pat.length) break;
+      // A file is not a directory: a dir-only pattern matches only a component above it.
+      if (dirOnly && end === parts.length) break;
+      if (pat.every((p, i) => p === parts[end - pat.length + i])) return true;
+    }
+    return false;
+  });
+}
+
+/** `client.spotlight`'s apply script, `sh -c SCRIPT sh TARBALL STAGE DEST [PROTECT...]`, in effect. */
+function spotlightApply(args: string[], guest: Guest): GuestResult {
+  const { files, dirs, blobs } = guest;
+  const [tgz = "", stage = "", dest = "", ...protect] = args;
+  if (!/^\/./.test(dest)) return fail(`spotlight: dest must be an absolute path other than /, got: ${dest}\n`, 2);
+  if (dest.includes("//") || dest.endsWith("/") || dest.split("/").some((c) => c === "." || c === "..")) {
+    return fail(`spotlight: dest must not end in / or hold an empty, . or .. component, got: ${dest}\n`, 2);
+  }
+  if (!stage.startsWith(`${dest}.cove-stage-`)) return fail(`the fake guest expects the stage beside dest, got ${stage}\n`, 2);
+  const blob = blobs.get(tgz);
+  if (!blob) return fail(`tar: ${tgz}: Cannot open: No such file or directory\n`, 2);
+  const tree = untar(gunzipSync(blob));
+  for (const path of [...files.keys()]) {
+    if (!path.startsWith(`${dest}/`)) continue;
+    const rel = path.slice(dest.length + 1);
+    if (!tree.has(rel) && !isProtected(rel, protect)) files.delete(path);
+  }
+  let bytes = 0;
+  for (const [rel, [text, size]] of tree) {
+    bytes += size;
+    // Protect only keeps paths from deletion: the tree's own files are all written.
+    files.set(`${dest}/${rel}`, text);
+    addDirs(dirs, `${dest}/${rel}`.slice(0, `${dest}/${rel}`.lastIndexOf("/")));
+  }
+  files.delete(tgz);
+  blobs.delete(tgz);
+  return ok(`${JSON.stringify({ files: tree.size, bytes })}\n`);
 }
 
 // What `git clone` puts in the destination: a Makefile, and a small Python module whose
@@ -318,6 +409,7 @@ type Checkpoint = { id: string; vm: string; vmId: string; diskOnly: boolean; des
 const copyGuest = (g: Guest, withMemory: boolean): Guest => ({
   files: new Map(g.files),
   dirs: new Set(g.dirs),
+  blobs: new Map(g.blobs),
   serving: withMemory ? new Map(g.serving) : new Map(),
   repos: new Map([...g.repos].map(([dir, r]) => [dir, { head: new Map(r.head), index: r.index && new Map(r.index) }])),
 });
@@ -405,7 +497,7 @@ export function mockFetch(): typeof fetch {
       created += 1;
       const vmName: string = body.name ?? (created === 1 ? "demo-vm" : `demo-vm-${created}`);
       if (vms.has(vmName)) return error(409, "vm_name_taken", `${vmName} is taken`);
-      const vm = newVm(vmName, { files: new Map(), dirs: new Set(["/root"]), serving: new Map(), repos: new Map() }, "creating", {
+      const vm = newVm(vmName, { files: new Map(), dirs: new Set(["/root", "/tmp"]), blobs: new Map(), serving: new Map(), repos: new Map() }, "creating", {
         tags: { ...(body.initial_tags ?? {}) },
         ...(body.auto_pause_policy ? { autoPause: body.auto_pause_policy } : {}),
         ttl: body.ttl_policy ?? null,
@@ -434,6 +526,7 @@ export function mockFetch(): typeof fetch {
         if (!vm.dirs.has(dir)) return error(404, "file_not_found", `${dir}: no such directory`);
         const bytes = typeof init?.body === "string" ? new TextEncoder().encode(init.body) : (init?.body as Uint8Array);
         vm.files.set(path, new TextDecoder().decode(bytes));
+        vm.blobs.set(path, bytes);
         return json({ path, size: bytes.byteLength, mode: 0o644, sha256: "0".repeat(64) });
       }
       const text = vm.files.get(path);
@@ -441,6 +534,15 @@ export function mockFetch(): typeof fetch {
       const bytes = new TextEncoder().encode(text);
       const headers = { "Content-Length": String(bytes.byteLength), "X-Cove-File-Mode": "0644" };
       return new Response(method === "HEAD" ? null : bytes, { status: 200, headers });
+    }
+    if (action === "tags") {
+      // The VM's own tags, the ones the list filters on and its detail shows.
+      if (method === "GET" && key === "") {
+        return json(Object.entries(vm.tags).sort().map(([k, value]) => ({ key: k, value, set_by: "mock", set_at: AT })));
+      }
+      if (method === "PUT") vm.tags[decodeURIComponent(key)] = JSON.parse(String(init?.body)).value;
+      if (method === "DELETE") delete vm.tags[decodeURIComponent(key)];
+      return new Response(null, { status: 204 });
     }
     if (method === "GET" && action === "") {
       // A new VM is creating for two polls, then running; a stopping VM is stopped by the next.

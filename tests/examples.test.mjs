@@ -3,9 +3,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { git, makeRepo, tempDir } from "./spotlight-repo.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const repoRoot = join(root, "../..");
@@ -121,7 +122,26 @@ const USE_CASES = {
     "deleted demo-vm-2",
     "task contributing-typo: no changes",
   ],
+  spotlight: [
+    "created demo-vm",
+    "demo-vm is running",
+    "spotlight on: main -> demo-vm:/srv/app (2 files)",
+    "app.txt: version: base",
+    "switched to feature",
+    "app.txt: version: feature",
+    "node_modules/marker: installed",
+    "status: feature on /srv/app",
+    "spotlight off: base tree restored on /srv/app",
+    "app.txt after off: version: base",
+    "status: nothing bound",
+    "deleted demo-vm",
+  ],
 };
+
+// Use cases whose programs the portal does not show yet. The portal shows a program pair under the
+// page its manifest entry names, which need not share the program's name; take a stem out of this
+// set when its pair is added to docs-portal/use-cases.json.
+const NOT_IN_PORTAL_YET = new Set([]);
 
 // Not use cases: the shared fake server and the examples that predate them.
 const NOT_USE_CASES = new Set(["_mock", "create-exec-destroy", "flue-sandbox"]);
@@ -130,7 +150,8 @@ const pyTwin = (stem) => `${stem.replaceAll("-", "_")}.py`;
 
 function runMock(file) {
   // A credential in the caller's environment must not matter under --mock.
-  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("COVE_")));
+  // Nor may a hook's GIT_DIR and friends, which would point the examples' git at the real repository.
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("COVE_") && !k.startsWith("GIT_")));
   return spawnSync(process.execPath, [file, "--mock"], { encoding: "utf8", timeout: 60_000, env });
 }
 
@@ -164,14 +185,18 @@ test("unit_every_use_case_exists_in_both_languages", () => {
 
 test("unit_portal_manifest_names_both_files_of_every_use_case", () => {
   const useCases = JSON.parse(readFileSync(join(repoRoot, "docs-portal/use-cases.json"), "utf8"));
-  // A CLI-only use case (the dev loop) names no program; every other one names both.
-  const withPrograms = useCases.filter((u) => u.typescript || u.python);
-  assert.deepEqual(withPrograms.map((u) => u.slug).sort(), Object.keys(USE_CASES).sort());
-  for (const u of withPrograms) {
-    assert.equal(u.typescript, `sdk/typescript/examples/${u.slug}.ts`);
-    assert.equal(u.python, `sdk/python/examples/${pyTwin(u.slug)}`);
+  // A page may show no programs (both fields absent); one that does names a TypeScript use case
+  // and its Python twin.
+  const shown = [];
+  for (const u of useCases.filter((u) => u.typescript !== undefined || u.python !== undefined)) {
+    const m = /^sdk\/typescript\/examples\/([\w-]+)\.ts$/.exec(u.typescript ?? "");
+    assert.ok(m, `${u.slug} names the TypeScript program ${u.typescript}`);
+    assert.equal(u.python, `sdk/python/examples/${pyTwin(m[1])}`);
     for (const f of [u.typescript, u.python]) assert.ok(existsSync(join(repoRoot, f)), `the manifest names ${f}, which does not exist`);
+    shown.push(m[1]);
   }
+  for (const stem of NOT_IN_PORTAL_YET) assert.ok(!shown.includes(stem), `${stem} is in the portal now: take it out of NOT_IN_PORTAL_YET`);
+  assert.deepEqual([...shown, ...NOT_IN_PORTAL_YET].sort(), Object.keys(USE_CASES).sort());
 });
 
 test("component_fake_server_refuses_to_delete_a_checkpoint_a_live_clone_was_made_from", async (t) => {
@@ -255,4 +280,47 @@ test("component_fake_server_gives_the_agent_its_key_only_through_the_secrets_rou
     (e) => e.status === 400 && /ANTHROPIC_API_KEY/.test(e.message),
   );
   assert.equal((await client.vms.execCollect("agent-vm", { command: agent("bash") })).exitCode, 0);
+});
+
+// Every file under `dir` with its bytes, so a stray write shows as a difference.
+function snapshot(dir) {
+  const out = {};
+  for (const e of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    const p = join(e.parentPath ?? e.path, e.name);
+    out[p] = e.isDirectory() ? "dir" : readFileSync(p).toString("base64");
+  }
+  return out;
+}
+
+test("component_spotlight_git_leaves_a_decoy_repository_alone_under_hook_variables", (t) => {
+  if (!process.features?.typescript) {
+    assert.ok(!process.env.COVE_CI, `node ${process.version} cannot run .ts files, and COVE_CI forbids skipping`);
+    return t.skip(`node ${process.version} cannot run .ts files`);
+  }
+  const decoy = join(tempDir(t, "cove-decoy-"), "decoy.git");
+  mkdirSync(decoy);
+  git(decoy, "init", "-q", "--bare");
+  const before = snapshot(decoy);
+  // What a git hook exports; all of them point at the decoy, never at a real repository.
+  const hook = {
+    GIT_DIR: decoy,
+    GIT_WORK_TREE: decoy,
+    GIT_INDEX_FILE: join(decoy, "index"),
+    GIT_OBJECT_DIRECTORY: join(decoy, "objects"),
+    GIT_ALTERNATE_OBJECT_DIRECTORIES: join(decoy, "objects"),
+    GIT_COMMON_DIR: decoy,
+  };
+  const saved = Object.fromEntries(Object.keys(hook).map((k) => [k, process.env[k]]));
+  t.after(() => {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+  Object.assign(process.env, hook);
+  const repo = makeRepo(t);
+  assert.equal(git(repo, "log", "-1", "--format=%s"), "base");
+  const run = runMock(join(tsExamples, "spotlight.ts"));
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.deepEqual(snapshot(decoy), before);
 });

@@ -12,7 +12,7 @@ errors) is hand-written.
   Browser callers authenticate with a bearer key and need CORS/network reach
   to the host; no ambient session/ticket pickup exists in the browser.
 - Zero runtime dependencies.
-- Resource groups follow the API's areas: `vms`, `checkpoints`, `policies`, `host`, `secrets`, `tags`, `audit`, `keys`, `webhooks`, `meta`, `events`, `teams`, `admin` (see `src/index.ts` for the list).
+- Resource groups follow the API's areas: `vms`, `checkpoints`, `policies`, `host`, `secrets`, `tags`, `audit`, `keys`, `webhooks`, `meta`, `events`, `teams`, `admin`, `spotlight` (see `src/index.ts` for the list).
 
 > **0.x: no stability promise.** Names follow the public vocabulary, which
 > changed on 2026-07-26. A rename is a clean
@@ -335,6 +335,81 @@ What to rely on:
   such header. A browser reads `Last-Modified` cross-origin freely (it is
   CORS-safelisted) but `mode` only if the server exposes `X-Cove-File-Mode`;
   otherwise `mode` is `undefined`.
+
+## Spotlight
+
+`client.spotlight` (Node.js only) puts a local git worktree onto a long-lived
+VM at a path, switches it to another worktree, and puts the base tree back
+with `off`, without restarting anything on the VM. It is the SDK's form of
+`cove dev spotlight`, over the HTTP API alone: no SSH, and no rsync on your
+machine; `git` must be on `PATH`.
+
+```ts
+const on = await client.spotlight.on("my-box", { tree: "./wt-feature", dest: "/srv/app" });
+// later: switch the same box to another worktree
+await client.spotlight.on("my-box", { tree: "./wt-fix", dest: "/srv/app" });
+await client.spotlight.status("my-box"); // { dest, base, source } or null
+await client.spotlight.off("my-box", { tree: "." }); // restores the base commit
+```
+
+- **What is sent.** The worktree's tracked files plus its untracked files git
+  does not ignore (`git ls-files -co --exclude-standard`), as one gzip tar
+  uploaded with `vms.files`, with modes and symlinks kept. Each switch sends
+  the whole tree; one over the host's file limit fails with
+  `FileTooLargeError` before anything changes on the VM. The tree is read,
+  tarred and gzipped in memory (`gzipSync` blocks the event loop while it
+  runs), so it suits source trees rather than large binaries, and the upload
+  counts against the client's `timeoutMs`. A submodule's contents are not
+  sent, so a switch deletes a submodule's files in `dest` unless a protect
+  entry covers them.
+- **How it lands.** One `exec` of a fixed sh script (every value is an
+  argument) extracts the tar beside `dest` and mirrors it onto `dest` with
+  delete semantics, with `rsync` when the image has it and `find`/`cp`
+  otherwise. Nothing matching `protect` (rsync protect patterns, as the CLI
+  uses; default `SPOTLIGHT_DEFAULT_PROTECT`: the `node_modules`, `target`,
+  `volumes` and `.venv` directories, and `.env`), nor anything below it, nor a `.git/`, is
+  ever deleted, so what the VM built there survives a switch. A file the tree
+  itself holds there is still written, as with the CLI. Wildcards in an
+  entry behave as in rsync only within one path component (as in the
+  defaults' plain names): on the fallback path a `*` can also match across
+  a `/`. Files land owned by root (`root:root`), while the CLI's rsync
+  writes them as the SSH user.
+- **What `dest`'s `.gitignore` ignores is kept.** With rsync the script uses
+  the CLI's filter rules in the CLI's order (`:- .gitignore`, then
+  `--exclude=.git/`, then the protect rules): `.git/` is never touched, and
+  a path a `.gitignore` in `dest` ignores (build output, `*.log`, `.env.local`)
+  is not deleted. rsync reads the `.gitignore` files `dest` holds before the
+  switch, so the first bind of a `dest` with none deletes ignored files, as
+  the CLI's first sync does. As with the CLI, a file the tree holds that its
+  own `.gitignore` ignores (a force-added one) is not written.
+- **Without rsync on the VM** the script cannot read `.gitignore`, so when
+  `dest` holds one outside a protected path it refuses (exit 3) before
+  changing anything, and the error says to install rsync on the VM. A
+  protected path inside a directory the tree replaces with a file or symlink
+  can make this fallback fail part-way, after its deletions. The first
+  fallback apply writes the tree's own `.gitignore` into `dest`, so on an image
+  without rsync every later `on` and `off` is refused (and `off` cannot clear
+  the binding) until rsync is installed.
+- **Deadline.** The apply runs under `timeoutSecs` (default 300). An apply
+  killed at its deadline throws `CoveError` saying so: `dest` may be
+  half-mirrored, so run `on` again. The next run removes the stage
+  directory the killed one left beside `dest`, and spotlight tarballs over
+  an hour old in `/tmp`.
+- **Where the binding lives.** In the VM's tags: `spotlight.base` (the HEAD
+  of the first bind, which `off` restores; a switch keeps it),
+  `spotlight.dest` and `spotlight.source` (the branch). They are written only
+  after a successful apply, show in `cove tag ls <vm>`, and let
+  `off` run from another process. The CLI keeps its binding on the laptop, so
+  the two do not see each other's yet. As with the CLI, `on` with a different
+  `dest` re-points the binding but keeps the base, so `off` restores only the
+  new `dest`, never the old one.
+- **`off`** needs a checkout that holds the base commit (else `CoveError`:
+  "run `git fetch`"), applies `git archive <base>` the same way, and deletes
+  the tags. It restores the recorded commit by its id, never a branch or
+  other ref. With nothing bound it resolves `null`, as the CLI's `off` does.
+- **Scopes:** `tags:read` and `tags:write` (the binding), `files:write` (the
+  upload), `vms:exec` (the apply). In a browser every method throws
+  `CoveError`.
 
 ## Event streams
 
@@ -838,7 +913,7 @@ node examples/create-exec-destroy.mjs --mock   # offline, in-memory fake server
 The `--mock` path doubles as a template for stubbing the SDK in your own
 tests: pass any `fetch`-shaped function via `new CoveClient({ fetch })`.
 
-Eleven worked use cases sit beside it. Each is the same program as its twin in
+Twelve worked use cases sit beside it. Each is the same program as its twin in
 the Python SDK's examples (same steps, same order, same output), and the
 documentation portal shows each pair side by side under Use cases:
 
@@ -855,6 +930,7 @@ documentation portal shows each pair side by side under Use cases:
 | `parallel-tries.ts` | Prepare one VM, checkpoint it, clone a VM per candidate fix, keep the first that passes |
 | `repro-box.ts` | A VM with a lifetime cap to reproduce a bug: checkpoint the failure, give a colleague access |
 | `coding-agent.ts` | A fresh VM per task for Claude Code: the key as a secret, clone, run the agent, download the diff |
+| `spotlight.ts` | Put a git worktree onto a VM, switch it to another, then restore the base (`client.spotlight`) |
 
 They are TypeScript files that Node 22.18 or later runs as they are, and they
 share one in-memory fake server for `--mock`. `npm test` runs every one under

@@ -53,6 +53,18 @@ export type {
   VmFileUploadOptions,
 } from "./resources/files.js";
 export { SecretsScope } from "./resources/secrets.js";
+export {
+  SpotlightResource,
+  SPOTLIGHT_DEFAULT_PROTECT,
+  SPOTLIGHT_TAGS,
+} from "./resources/spotlight.js";
+export type {
+  SpotlightOnOptions,
+  SpotlightOffOptions,
+  SpotlightOnResult,
+  SpotlightOffResult,
+  SpotlightStatus,
+} from "./resources/spotlight.js";
 export { SERVICE_KEYS_MIN_API_VERSION } from "./resources/keys.js";
 
 export * from "./types.js";

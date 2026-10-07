@@ -9,6 +9,7 @@ import { KeysResource } from "./resources/keys.js";
 import { MetaResource } from "./resources/meta.js";
 import { PoliciesResource } from "./resources/policies.js";
 import { SecretsResource } from "./resources/secrets.js";
+import { SpotlightResource } from "./resources/spotlight.js";
 import { TagsResource } from "./resources/tags.js";
 import { TeamsResource } from "./resources/teams.js";
 import { VmsResource } from "./resources/vms.js";
@@ -78,6 +79,11 @@ export class CoveClient {
   readonly teams: TeamsResource;
   /** The server's event streams, reconnecting across its 300 s close. See {@link EventsResource}. */
   readonly events: EventsResource;
+  /**
+   * Mirror a local git worktree onto a VM directory, switch it, and restore the base tree, over
+   * the file and exec API. Node.js only. See {@link SpotlightResource}.
+   */
+  readonly spotlight: SpotlightResource;
   readonly #http: CoveHttp;
 
   constructor(opts: CoveClientOptions) {
@@ -103,6 +109,7 @@ export class CoveClient {
     this.admin = new AdminResource(http);
     this.teams = new TeamsResource(http);
     this.events = new EventsResource(http);
+    this.spotlight = new SpotlightResource(this.vms, this.tags);
   }
 
   /**
