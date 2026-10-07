@@ -516,7 +516,7 @@ export function mockFetch(): typeof fetch {
         const c = checkpoints.get(body.source_checkpoint_id);
         if (!c) return error(404, "clone_source_not_found", `not found: ${body.source_checkpoint_id}`);
         if (c.vmId !== vm.id) return invalidState(name, vm, "clone from a checkpoint of another VM");
-        if (c.diskOnly) return error(409, "invalid_state_transition", "disk-only checkpoints cannot be cloned; use restore");
+        if (c.diskOnly) return error(409, "invalid_state_transition", "a disk-only checkpoint cannot be cloned; stop the VM and wake it from this checkpoint");
         from = c;
       } else {
         from = { id: nextId("0199a001"), vm: name, vmId: vm.id, diskOnly: false, description: "pre_clone", guest: copyGuest(vm, true), clones: 0 };
