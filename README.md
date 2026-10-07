@@ -47,9 +47,9 @@ install the tarball your server serves, by its URL (below); the cooldown does no
 
 ### From your Cove server
 
-A Cove server installed from a release also serves the SDK of its own release, without
+A Cove server can also serve an SDK version, the one its operator installed on it, without
 authentication, under `/public/sdk/` on its main (web) address; the API-key listener does not
-serve it. Use this when you want exactly the SDK your server shipped with, or when you install
+serve it. Use this when you want exactly the SDK version your server's operator chose, or when you install
 from a mirror that cannot reach the npm registry. `/public/sdk/index.json` lists each file and its
 version. Install the tarball by its URL, pinned to that version:
 
