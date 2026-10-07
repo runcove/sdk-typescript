@@ -11,3 +11,6 @@ declare const client: CoveClient;
 void client.vms.exec("vm", { command: ["true"], timeoutSecs: 5 });
 // @ts-expect-error vms.exec takes no selector either
 void client.vms.exec("vm", { command: ["true"], selector: { kind: "all" } });
+void client.vms.exec("vm", { command: ["id"], cwd: "/srv", env: { A: "1" }, user: "builder", login: true });
+// @ts-expect-error env values are strings
+void client.vms.exec("vm", { command: ["id"], env: { A: 1 } });

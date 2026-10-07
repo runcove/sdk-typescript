@@ -54,6 +54,24 @@ export interface ExecOptions {
    * the HTTP request carrying it.
    */
   timeoutSecs?: number;
+  /**
+   * Working directory. A relative path resolves against the home directory of
+   * the account the command runs as; default that home directory (`/root`).
+   */
+  cwd?: string;
+  /**
+   * Extra environment variables, set last so they win over the guest's
+   * login-like defaults (`PATH` included). At most 128; names at most 256
+   * bytes with no `=`; no NUL in names or values.
+   */
+  env?: Record<string, string>;
+  /** Account to run as, by name in the VM's `/etc/passwd`. Default: root. */
+  user?: string;
+  /**
+   * Run through the account's login shell (`<shell> -l -c`) so its profile
+   * files apply. Default `false`.
+   */
+  login?: boolean;
 }
 
 export interface ExecWithSecretsOptions {
@@ -534,7 +552,19 @@ export class VmsResource {
     opts: ExecOptions,
     overrides: RequestOverrides = {},
   ): AsyncGenerator<ExecEvent> {
-    const body: ExecRequestDto = { command: opts.command, timeout_secs: opts.timeoutSecs };
+    // cwd/env/user/login need guest agent protocol 9: a VM whose agent is
+    // older refuses an exec that carries any of them (the stream's `error`
+    // event says so) and runs one without them as before. Unset options are
+    // left out of the body, so a plain exec is unchanged on the wire.
+    const body: ExecRequestDto = {
+      command: opts.command,
+      timeout_secs: opts.timeoutSecs,
+      cwd: opts.cwd,
+      env: opts.env,
+      user: opts.user,
+      // `false` is the default: left out like the others.
+      login: opts.login || undefined,
+    };
     const response = await this.http.requestSSE("POST", apiPath`/api/vms/${name}/exec`, {
       ...overrides,
       body,

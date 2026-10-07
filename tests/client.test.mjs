@@ -161,6 +161,39 @@ test("exec and execCollect report a command killed at its deadline as timedOut",
   assert.deepEqual(ownResult, { stdout: "", stderr: "", exitCode: 124, timedOut: false });
 });
 
+test("exec and execCollect send cwd, env, user and login; a plain exec sends none of them", async () => {
+  const exit = 'event: exit\ndata: {"code":0}\n\n';
+  const opts = {
+    command: ["gh", "--version"],
+    timeoutSecs: 10,
+    cwd: "/srv/app",
+    env: { GH_TOKEN: "t0k", LANG: "C.UTF-8" },
+    user: "builder",
+    login: true,
+  };
+  const wire = {
+    command: ["gh", "--version"],
+    timeout_secs: 10,
+    cwd: "/srv/app",
+    env: { GH_TOKEN: "t0k", LANG: "C.UTF-8" },
+    user: "builder",
+    login: true,
+  };
+  const streamed = fakeFetch(sse(exit));
+  for await (const _evt of makeClient(streamed.impl).vms.exec("web-1", opts)) void _evt;
+  assert.deepEqual(JSON.parse(streamed.calls[0].init.body), wire);
+  const collected = fakeFetch(sse(exit));
+  await makeClient(collected.impl).vms.execCollect("web-1", opts);
+  assert.deepEqual(JSON.parse(collected.calls[0].init.body), wire);
+  // An exec without options keeps the old body, so a pre-v9 guest agent still runs it.
+  const plain = fakeFetch(sse(exit));
+  await makeClient(plain.impl).vms.execCollect("web-1", { command: ["ls"] });
+  assert.deepEqual(JSON.parse(plain.calls[0].init.body), { command: ["ls"] });
+  const loginFalse = fakeFetch(sse(exit));
+  await makeClient(loginFalse.impl).vms.execCollect("web-1", { command: ["ls"], login: false });
+  assert.deepEqual(JSON.parse(loginFalse.calls[0].init.body), { command: ["ls"] });
+});
+
 test("execCollect preserves partial chunks without inventing newlines", async () => {
   const { impl } = fakeFetch(
     sse('event: stdout\ndata: no-newline\n\nevent: exit\ndata: {"code":0}\n\n'),

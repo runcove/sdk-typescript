@@ -1159,6 +1159,27 @@ export type ExecOutputDto = {
  */
 export type ExecRequestDto = {
     command: Array<string>;
+    /**
+     * Working directory for the command. A relative path resolves against
+     * the home directory of the account it runs as. Default: that home
+     * directory (`/root`).
+     */
+    cwd?: string | null;
+    /**
+     * Extra environment variables, set last so they win over the defaults
+     * (`PATH` included). At most 128, each name at most 256 bytes with no
+     * `=`; names and values must not contain NUL.
+     */
+    env?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Run the command through the account's login shell (`<shell> -l -c`),
+     * so its profile files apply (for example tools a profile script adds
+     * to `PATH`). Default `false`: the command gets a login-like
+     * environment without any profile file being run.
+     */
+    login?: boolean | null;
     selector?: null | InjectSelector;
     /**
      * Seconds the command may run (default 30). Past it the guest kills the
@@ -1166,6 +1187,11 @@ export type ExecRequestDto = {
      * `{"code": 124, "timed_out": true}`.
      */
     timeout_secs?: number | null;
+    /**
+     * Account to run the command as, by name in the VM's `/etc/passwd`.
+     * Default: root.
+     */
+    user?: string | null;
 };
 
 /**
@@ -7624,7 +7650,7 @@ export type ExecVmData = {
 
 export type ExecVmErrors = {
     /**
-     * Empty `command`, or a `selector` field (removed in API version 5; use `execVmWithSecrets`).
+     * Empty `command`; an empty or NUL-carrying `cwd` or `user`; a malformed `env` (a name that is empty, longer than 256 bytes or holds `=` or NUL, a value with NUL, more than 128 variables); or a `selector` field (removed in API version 5; use `execVmWithSecrets`).
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
