@@ -3032,6 +3032,10 @@ export type UpdateAutoPauseTimeoutsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type UpdateAutoPauseTimeoutsError = UpdateAutoPauseTimeoutsErrors[keyof UpdateAutoPauseTimeoutsErrors];
@@ -3090,6 +3094,10 @@ export type ListAnyCheckpointsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListAnyCheckpointsError = ListAnyCheckpointsErrors[keyof ListAnyCheckpointsErrors];
@@ -3138,6 +3146,10 @@ export type DeleteAnyCheckpointErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteAnyCheckpointError = DeleteAnyCheckpointErrors[keyof DeleteAnyCheckpointErrors];
@@ -3182,6 +3194,10 @@ export type DrainHostErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DrainHostError = DrainHostErrors[keyof DrainHostErrors];
@@ -3217,6 +3233,10 @@ export type GetHostStateErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetHostStateError = GetHostStateErrors[keyof GetHostStateErrors];
@@ -3257,6 +3277,10 @@ export type ListProjectMembersErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListProjectMembersError = ListProjectMembersErrors[keyof ListProjectMembersErrors];
@@ -3310,6 +3334,10 @@ export type CreateProjectMemberErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateProjectMemberError = CreateProjectMemberErrors[keyof CreateProjectMemberErrors];
@@ -3354,6 +3382,10 @@ export type DeleteProjectMemberErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteProjectMemberError = DeleteProjectMemberErrors[keyof DeleteProjectMemberErrors];
@@ -3389,6 +3421,10 @@ export type GetQuotaDefaultsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetQuotaDefaultsError = GetQuotaDefaultsErrors[keyof GetQuotaDefaultsErrors];
@@ -3429,6 +3465,10 @@ export type DeleteUserQuotaOverrideErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteUserQuotaOverrideError = DeleteUserQuotaOverrideErrors[keyof DeleteUserQuotaOverrideErrors];
@@ -3469,6 +3509,10 @@ export type GetUserQuotaOverrideErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetUserQuotaOverrideError = GetUserQuotaOverrideErrors[keyof GetUserQuotaOverrideErrors];
@@ -3520,6 +3564,10 @@ export type UpdateUserQuotaOverrideErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type UpdateUserQuotaOverrideError = UpdateUserQuotaOverrideErrors[keyof UpdateUserQuotaOverrideErrors];
@@ -3560,6 +3608,10 @@ export type CreateQuotaBypassErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateQuotaBypassError = CreateQuotaBypassErrors[keyof CreateQuotaBypassErrors];
@@ -3600,6 +3652,10 @@ export type DeleteTeamQuotaOverrideErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteTeamQuotaOverrideError = DeleteTeamQuotaOverrideErrors[keyof DeleteTeamQuotaOverrideErrors];
@@ -3640,6 +3696,10 @@ export type GetTeamQuotaOverrideErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetTeamQuotaOverrideError = GetTeamQuotaOverrideErrors[keyof GetTeamQuotaOverrideErrors];
@@ -3687,6 +3747,10 @@ export type UpdateTeamQuotaOverrideErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type UpdateTeamQuotaOverrideError = UpdateTeamQuotaOverrideErrors[keyof UpdateTeamQuotaOverrideErrors];
@@ -3729,6 +3793,10 @@ export type UpdateVmAgentsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type UpdateVmAgentsError = UpdateVmAgentsErrors[keyof UpdateVmAgentsErrors];
@@ -3764,6 +3832,10 @@ export type ListAllUsersErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListAllUsersError = ListAllUsersErrors[keyof ListAllUsersErrors];
@@ -3808,6 +3880,10 @@ export type GetUserErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetUserError = GetUserErrors[keyof GetUserErrors];
@@ -3848,6 +3924,10 @@ export type RevokeUserSessionsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type RevokeUserSessionsError = RevokeUserSessionsErrors[keyof RevokeUserSessionsErrors];
@@ -3902,6 +3982,10 @@ export type ListAllVmsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListAllVmsError = ListAllVmsErrors[keyof ListAllVmsErrors];
@@ -3948,6 +4032,10 @@ export type BulkDeleteVmsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type BulkDeleteVmsError = BulkDeleteVmsErrors[keyof BulkDeleteVmsErrors];
@@ -3994,6 +4082,10 @@ export type BulkStopVmsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type BulkStopVmsError = BulkStopVmsErrors[keyof BulkStopVmsErrors];
@@ -4050,6 +4142,10 @@ export type ListApiKeysErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListApiKeysError = ListApiKeysErrors[keyof ListApiKeysErrors];
@@ -4100,6 +4196,10 @@ export type CreateApiKeyErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
@@ -4144,6 +4244,10 @@ export type RevokeApiKeyErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type RevokeApiKeyError = RevokeApiKeyErrors[keyof RevokeApiKeyErrors];
@@ -4192,6 +4296,10 @@ export type RotateApiKeyErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type RotateApiKeyError = RotateApiKeyErrors[keyof RotateApiKeyErrors];
@@ -4272,6 +4380,10 @@ export type ListAuditErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListAuditError = ListAuditErrors[keyof ListAuditErrors];
@@ -4322,6 +4434,10 @@ export type ListAllCheckpointsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListAllCheckpointsError = ListAllCheckpointsErrors[keyof ListAllCheckpointsErrors];
@@ -4370,6 +4486,10 @@ export type DeleteCheckpointErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteCheckpointError = DeleteCheckpointErrors[keyof DeleteCheckpointErrors];
@@ -4414,6 +4534,10 @@ export type GetCheckpointErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetCheckpointError = GetCheckpointErrors[keyof GetCheckpointErrors];
@@ -4441,6 +4565,10 @@ export type HealthErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type HealthError = HealthErrors[keyof HealthErrors];
@@ -4476,6 +4604,10 @@ export type GetHostCapacityErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetHostCapacityError = GetHostCapacityErrors[keyof GetHostCapacityErrors];
@@ -4511,6 +4643,10 @@ export type GetHostCapacityCheckErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetHostCapacityCheckError = GetHostCapacityCheckErrors[keyof GetHostCapacityCheckErrors];
@@ -4558,6 +4694,10 @@ export type CreateReservationErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateReservationError = CreateReservationErrors[keyof CreateReservationErrors];
@@ -4606,6 +4746,10 @@ export type DeleteReservationErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteReservationError = DeleteReservationErrors[keyof DeleteReservationErrors];
@@ -4664,6 +4808,10 @@ export type GetHostTelemetryErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetHostTelemetryError = GetHostTelemetryErrors[keyof GetHostTelemetryErrors];
@@ -4699,6 +4847,10 @@ export type ListImagesErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListImagesError = ListImagesErrors[keyof ListImagesErrors];
@@ -4734,6 +4886,10 @@ export type StreamLifecycleEventsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type StreamLifecycleEventsError = StreamLifecycleEventsErrors[keyof StreamLifecycleEventsErrors];
@@ -4802,6 +4958,10 @@ export type GetMeErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetMeError = GetMeErrors[keyof GetMeErrors];
@@ -4833,6 +4993,10 @@ export type GetCliStatusErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetCliStatusError = GetCliStatusErrors[keyof GetCliStatusErrors];
@@ -4864,6 +5028,10 @@ export type ListMyConnectedAppsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListMyConnectedAppsError = ListMyConnectedAppsErrors[keyof ListMyConnectedAppsErrors];
@@ -4935,6 +5103,10 @@ export type ListSshKeysErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListSshKeysError = ListSshKeysErrors[keyof ListSshKeysErrors];
@@ -5093,6 +5265,10 @@ export type ListSessionsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
@@ -5160,6 +5336,10 @@ export type GetOpenapiDocumentErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetOpenapiDocumentError = GetOpenapiDocumentErrors[keyof GetOpenapiDocumentErrors];
@@ -5206,6 +5386,10 @@ export type ListProjectSecretsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -5262,6 +5446,10 @@ export type ImportProjectSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -5313,6 +5501,10 @@ export type UnsetProjectSecretErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -5375,6 +5567,10 @@ export type SetProjectSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -5436,6 +5632,10 @@ export type RotateProjectSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -5474,6 +5674,10 @@ export type GetSystemStatusErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetSystemStatusError = GetSystemStatusErrors[keyof GetSystemStatusErrors];
@@ -5509,6 +5713,10 @@ export type ListAllTagsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListAllTagsError = ListAllTagsErrors[keyof ListAllTagsErrors];
@@ -5544,6 +5752,10 @@ export type ListTeamsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListTeamsError = ListTeamsErrors[keyof ListTeamsErrors];
@@ -5586,6 +5798,10 @@ export type CreateTeamErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateTeamError = CreateTeamErrors[keyof CreateTeamErrors];
@@ -5634,6 +5850,10 @@ export type DeleteTeamErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteTeamError = DeleteTeamErrors[keyof DeleteTeamErrors];
@@ -5678,6 +5898,10 @@ export type ListTeamMembersErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListTeamMembersError = ListTeamMembersErrors[keyof ListTeamMembersErrors];
@@ -5733,6 +5957,10 @@ export type CreateTeamMemberErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateTeamMemberError = CreateTeamMemberErrors[keyof CreateTeamMemberErrors];
@@ -5779,6 +6007,10 @@ export type DeleteTeamMemberErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteTeamMemberError = DeleteTeamMemberErrors[keyof DeleteTeamMemberErrors];
@@ -5823,6 +6055,10 @@ export type ListTeamSecretsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -5879,6 +6115,10 @@ export type ImportTeamSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -5930,6 +6170,10 @@ export type UnsetTeamSecretErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -5992,6 +6236,10 @@ export type SetTeamSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -6053,6 +6301,10 @@ export type RotateTeamSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -6091,6 +6343,10 @@ export type ListUsersErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListUsersError = ListUsersErrors[keyof ListUsersErrors];
@@ -6135,6 +6391,10 @@ export type ListUserSecretsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -6191,6 +6451,10 @@ export type ImportUserSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -6242,6 +6506,10 @@ export type UnsetUserSecretErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -6304,6 +6572,10 @@ export type SetUserSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -6365,6 +6637,10 @@ export type RotateUserSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -6395,6 +6671,10 @@ export type VersionErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type VersionError = VersionErrors[keyof VersionErrors];
@@ -6453,6 +6733,10 @@ export type ListVmsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmsError = ListVmsErrors[keyof ListVmsErrors];
@@ -6506,6 +6790,10 @@ export type CreateVmErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Host cannot accept creations right now.
      */
     503: ApiError;
@@ -6544,6 +6832,10 @@ export type StreamAllVmEventsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type StreamAllVmEventsError = StreamAllVmEventsErrors[keyof StreamAllVmEventsErrors];
@@ -6579,6 +6871,10 @@ export type ListSharedVmsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListSharedVmsError = ListSharedVmsErrors[keyof ListSharedVmsErrors];
@@ -6625,6 +6921,10 @@ export type DeleteVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteVmError = DeleteVmErrors[keyof DeleteVmErrors];
@@ -6673,6 +6973,10 @@ export type GetVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetVmError = GetVmErrors[keyof GetVmErrors];
@@ -6717,6 +7021,10 @@ export type ListVmAccessErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmAccessError = ListVmAccessErrors[keyof ListVmAccessErrors];
@@ -6774,6 +7082,10 @@ export type GrantVmAccessErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GrantVmAccessError = GrantVmAccessErrors[keyof GrantVmAccessErrors];
@@ -6830,6 +7142,10 @@ export type RevokeVmAccessErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type RevokeVmAccessError = RevokeVmAccessErrors[keyof RevokeVmAccessErrors];
@@ -6878,6 +7194,10 @@ export type SetVmAutoPauseErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type SetVmAutoPauseError = SetVmAutoPauseErrors[keyof SetVmAutoPauseErrors];
@@ -6937,6 +7257,10 @@ export type ListVmCheckpointsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmCheckpointsError = ListVmCheckpointsErrors[keyof ListVmCheckpointsErrors];
@@ -6992,6 +7316,10 @@ export type CreateCheckpointErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateCheckpointError = CreateCheckpointErrors[keyof CreateCheckpointErrors];
@@ -7040,6 +7368,10 @@ export type ConnectVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ConnectVmError = ConnectVmErrors[keyof ConnectVmErrors];
@@ -7093,6 +7425,10 @@ export type GetVmConsoleErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetVmConsoleError = GetVmConsoleErrors[keyof GetVmConsoleErrors];
@@ -7146,6 +7482,10 @@ export type StreamVmConsoleErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type StreamVmConsoleError = StreamVmConsoleErrors[keyof StreamVmConsoleErrors];
@@ -7190,6 +7530,10 @@ export type StreamVmEventsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type StreamVmEventsError = StreamVmEventsErrors[keyof StreamVmEventsErrors];
@@ -7249,6 +7593,10 @@ export type ListVmEventsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmEventsError = ListVmEventsErrors[keyof ListVmEventsErrors];
@@ -7299,6 +7647,10 @@ export type ExecVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ExecVmError = ExecVmErrors[keyof ExecVmErrors];
@@ -7350,6 +7702,10 @@ export type ExecVmWithSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * `[secrets] enabled = false` on this host.
      */
     503: ApiError;
@@ -7397,6 +7753,10 @@ export type GetVmExpiryErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetVmExpiryError = GetVmExpiryErrors[keyof GetVmExpiryErrors];
@@ -7445,6 +7805,10 @@ export type SetVmExpiryErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type SetVmExpiryError = SetVmExpiryErrors[keyof SetVmExpiryErrors];
@@ -7510,6 +7874,10 @@ export type DownloadVmFileErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * The guest agent connection was lost or timed out, or the guest has too many transfers open (`unavailable`). Retry.
      */
@@ -7579,6 +7947,10 @@ export type StatVmFileErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * The guest agent connection was lost or timed out, or the guest has too many transfers open (`unavailable`). Retry.
      */
@@ -7658,6 +8030,10 @@ export type UploadVmFileErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * The guest agent connection was lost or timed out, or the guest has too many transfers open (`unavailable`): retry. Also `unavailable`, with a message starting `file transfer too slow`, when the upload ran longer than its size allows at an average of 256 KiB/s (60 s at least): send the body faster.
      */
     503: ApiError;
@@ -7713,6 +8089,10 @@ export type HibernateVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type HibernateVmError = HibernateVmErrors[keyof HibernateVmErrors];
@@ -7757,6 +8137,10 @@ export type GetIdleStateErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetIdleStateError = GetIdleStateErrors[keyof GetIdleStateErrors];
@@ -7801,6 +8185,10 @@ export type ListVmInvitesErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmInvitesError = ListVmInvitesErrors[keyof ListVmInvitesErrors];
@@ -7849,6 +8237,10 @@ export type RevokeVmInviteErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type RevokeVmInviteError = RevokeVmInviteErrors[keyof RevokeVmInviteErrors];
@@ -7897,6 +8289,10 @@ export type PauseVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type PauseVmError = PauseVmErrors[keyof PauseVmErrors];
@@ -7939,6 +8335,10 @@ export type ListVmPortsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmPortsError = ListVmPortsErrors[keyof ListVmPortsErrors];
@@ -7994,6 +8394,10 @@ export type CreateVmPortErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateVmPortError = CreateVmPortErrors[keyof CreateVmPortErrors];
@@ -8048,6 +8452,10 @@ export type DeleteVmPortErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteVmPortError = DeleteVmPortErrors[keyof DeleteVmPortErrors];
@@ -8109,6 +8517,10 @@ export type CreateVmPortInviteErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CreateVmPortInviteError = CreateVmPortInviteErrors[keyof CreateVmPortInviteErrors];
@@ -8168,6 +8580,10 @@ export type SetVmPortPublicErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type SetVmPortPublicError = SetVmPortPublicErrors[keyof SetVmPortPublicErrors];
@@ -8270,6 +8686,10 @@ export type ListVmProcessesErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmProcessesError = ListVmProcessesErrors[keyof ListVmProcessesErrors];
@@ -8326,6 +8746,10 @@ export type ResizeVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ResizeVmError = ResizeVmErrors[keyof ResizeVmErrors];
@@ -8374,6 +8798,10 @@ export type ResumeVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ResumeVmError = ResumeVmErrors[keyof ResumeVmErrors];
@@ -8416,6 +8844,10 @@ export type ListVmSecretsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -8474,6 +8906,10 @@ export type ImportVmSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -8525,6 +8961,10 @@ export type DeleteVmSecretErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Secrets injection is disabled on this host.
      */
@@ -8589,6 +9029,10 @@ export type SetVmSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -8652,6 +9096,10 @@ export type RotateVmSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Secrets injection is disabled on this host.
      */
     503: ApiError;
@@ -8703,6 +9151,10 @@ export type StartVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type StartVmError = StartVmErrors[keyof StartVmErrors];
@@ -8745,6 +9197,10 @@ export type GetVmStatsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetVmStatsError = GetVmStatsErrors[keyof GetVmStatsErrors];
@@ -8793,6 +9249,10 @@ export type StopVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type StopVmError = StopVmErrors[keyof StopVmErrors];
@@ -8835,6 +9295,10 @@ export type ListVmTagsErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListVmTagsError = ListVmTagsErrors[keyof ListVmTagsErrors];
@@ -8887,6 +9351,10 @@ export type DeleteVmTagErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type DeleteVmTagError = DeleteVmTagErrors[keyof DeleteVmTagErrors];
@@ -8948,6 +9416,10 @@ export type SetVmTagErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type SetVmTagError = SetVmTagErrors[keyof SetVmTagErrors];
@@ -8996,6 +9468,10 @@ export type UnsetVmTeamErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type UnsetVmTeamError = UnsetVmTeamErrors[keyof UnsetVmTeamErrors];
@@ -9048,6 +9524,10 @@ export type SetVmTeamErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type SetVmTeamError = SetVmTeamErrors[keyof SetVmTeamErrors];
@@ -9115,6 +9595,10 @@ export type GetVmTelemetryErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetVmTelemetryError = GetVmTelemetryErrors[keyof GetVmTelemetryErrors];
@@ -9159,6 +9643,10 @@ export type GetVmUrlErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetVmUrlError = GetVmUrlErrors[keyof GetVmUrlErrors];
@@ -9213,6 +9701,10 @@ export type WakeVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type WakeVmError = WakeVmErrors[keyof WakeVmErrors];
@@ -9271,6 +9763,10 @@ export type CloneVmErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type CloneVmError = CloneVmErrors[keyof CloneVmErrors];
@@ -9319,6 +9815,10 @@ export type ListWebhooksErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListWebhooksError = ListWebhooksErrors[keyof ListWebhooksErrors];
@@ -9368,6 +9868,10 @@ export type CreateWebhookErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Webhooks feature disabled (`feature_disabled`).
      */
@@ -9421,6 +9925,10 @@ export type DeleteWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Webhooks feature disabled (`feature_disabled`).
      */
     503: ApiError;
@@ -9472,6 +9980,10 @@ export type GetWebhookErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetWebhookError = GetWebhookErrors[keyof GetWebhookErrors];
@@ -9526,6 +10038,10 @@ export type UpdateWebhookErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Webhooks feature disabled (`feature_disabled`).
      */
@@ -9591,6 +10107,10 @@ export type ListWebhookDeliveriesErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type ListWebhookDeliveriesError = ListWebhookDeliveriesErrors[keyof ListWebhookDeliveriesErrors];
@@ -9643,6 +10163,10 @@ export type GetWebhookDeliveryErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type GetWebhookDeliveryError = GetWebhookDeliveryErrors[keyof GetWebhookDeliveryErrors];
@@ -9696,6 +10220,10 @@ export type ReplayWebhookDeliveryErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Webhooks feature disabled (`feature_disabled`).
      */
     503: ApiError;
@@ -9748,6 +10276,10 @@ export type DisableWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Webhooks feature disabled (`feature_disabled`).
      */
     503: ApiError;
@@ -9799,6 +10331,10 @@ export type EnableWebhookErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
     /**
      * Webhooks feature disabled (`feature_disabled`).
      */
@@ -9854,6 +10390,10 @@ export type RotateWebhookSecretErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Webhooks feature disabled (`feature_disabled`).
      */
     503: ApiError;
@@ -9906,6 +10446,10 @@ export type TestWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
      * Webhooks feature disabled (`feature_disabled`).
      */
     503: ApiError;
@@ -9940,6 +10484,10 @@ export type WhoamiErrors = {
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
      */
     426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
 };
 
 export type WhoamiError = WhoamiErrors[keyof WhoamiErrors];
