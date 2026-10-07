@@ -66,6 +66,7 @@ export type {
   ExecExit,
   ExecOutputDto,
   ExecWithSecretsRequest,
+  ExpiresIn,
   FileUploaded,
   GrantShareOutcome,
   GrantShareRequest,

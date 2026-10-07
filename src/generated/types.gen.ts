@@ -1234,6 +1234,17 @@ export type ExecWithSecretsRequest = {
 };
 
 /**
+ * An expiry counted from now (`setVmExpiry`'s `expires_in`).
+ */
+export type ExpiresIn = {
+    /**
+     * Seconds from now until Cove deletes the VM and its disk: 3600 (one
+     * hour) to 315360000 (ten years). `null` removes the expiry.
+     */
+    secs?: number | null;
+};
+
+/**
  * `PUT /vms/{name}/files` response body: the file as it was committed in the
  * guest.
  */
@@ -2793,8 +2804,9 @@ export type TryReserveBody = {
  */
 export type TtlPolicy = {
     /**
-     * Wall-clock cap from `vms.created_at` (default: `None`).
-     * Service-layer validation enforces `>= 3600` when `Some`.
+     * Wall-clock cap counted from the VM's creation, or its claim for a VM
+     * Cove had ready in advance (default: `None`). Service-layer validation
+     * enforces 3600 (one hour) to 315360000 (ten years) when `Some`.
      */
     max_lifetime_secs?: number | null;
     /**
@@ -2834,10 +2846,14 @@ export type UpdateAutoPauseRequest = {
 };
 
 /**
- * POST /vms/{name}/ttl-policy request body.
+ * POST /vms/{name}/expiry request body. Carries exactly one of `policy`
+ * (replace the whole policy) and `expires_in` (set only the expiry, counted
+ * from now). A server older than `expires_in` refuses a body without
+ * `policy` rather than misreading it.
  */
 export type UpdateTtlPolicyRequest = {
-    policy: TtlPolicy;
+    expires_in?: null | ExpiresIn;
+    policy?: null | TtlPolicy;
 };
 
 /**
@@ -7300,7 +7316,7 @@ export type CreateVmErrors = {
      */
     409: VmCreateConflictResponse;
     /**
-     * Validation failed (resource bounds), or `nested_virt` was set for an image with no golden disk on this host (it must cold-boot). A name the validator rejects is a **400**, not a 422 — see above.
+     * Validation failed: resource bounds; a `ttl_policy.max_lifetime_secs` outside 3600 to 315360000 seconds (ten years); a delete-after-stop grace outside 60 to 315360000 seconds; an `auto_pause_policy` idle timeout outside 60 to 86400 seconds; or `nested_virt` set for an image with no golden disk on this host (it must cold-boot). A name the validator rejects is a **400**, not a 422 — see above.
      */
     422: ApiError;
     /**
@@ -8319,6 +8335,10 @@ export type SetVmExpiryErrors = {
      * No such VM, or not visible to the caller.
      */
     404: ApiError;
+    /**
+     * `validation_failed`: neither or both of `policy` and `expires_in`; a lifetime outside 3600 to 315360000 seconds; a delete-after-stop grace outside 60 to 315360000 seconds (0 is immediate, -1 never); or a change a connected app without the destructive grant may not make.
+     */
+    422: ApiError;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
@@ -10274,7 +10294,7 @@ export type CloneVmErrors = {
      */
     409: VmConflictResponse;
     /**
-     * An override is out of bounds (`validation_failed`): in `ttl_policy`, an `on_stop` that deletes after a delay needs a delay of at least 60 seconds, and `max_lifetime_secs` must be absent or at least 3600; in `auto_pause_policy`, `idle_timeout_secs` must be between 60 and 86400.
+     * An override is out of bounds (`validation_failed`): in `ttl_policy`, an `on_stop` that deletes after a delay needs a delay of 60 to 315360000 seconds (ten years), and `max_lifetime_secs` must be absent or 3600 to 315360000; in `auto_pause_policy`, `idle_timeout_secs` must be between 60 and 86400.
      */
     422: ApiError;
     /**
