@@ -33,6 +33,7 @@ export const ERROR_CODES = [
   "checkpoint_conflict",
   "clone_source_not_found",
   "wake_target_not_found",
+  "disk_rollback_not_named",
   "feature_disabled",
   "port_not_allowed",
   "port_not_primary",

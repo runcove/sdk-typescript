@@ -234,9 +234,14 @@ export class VmsResource {
   }
 
   /**
-   * Wake a hibernated VM. Scope: `vms:write`. 409 on invalid state (only
-   * valid from `hibernated`) or admission denial. Omit `checkpoint_id` to
-   * wake from the latest available checkpoint.
+   * Wake a VM from a checkpoint. Scope: `vms:write`. A `hibernated` VM
+   * wakes from a checkpoint with memory; a `stopped` VM wakes from a
+   * disk-only one, whose disk replaces the VM's. Omit `checkpoint_id` to
+   * wake from the latest available checkpoint, except on a `stopped` VM
+   * whose latest is disk-only: that is refused with 409
+   * `disk_rollback_not_named` and changes nothing (call `start` to boot the
+   * current disk, or pass the checkpoint's id to roll back). 409
+   * `invalid_state_transition` on any other state the checkpoint cannot wake.
    *
    * This used to live at `client.checkpoints.restore()`, which read like
    * "roll a VM back to a checkpoint" and was not that: it posts to the

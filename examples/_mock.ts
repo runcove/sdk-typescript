@@ -601,6 +601,15 @@ export function mockFetch(): typeof fetch {
       if (named && named.vmId !== vm.id) return invalidState(name, vm, "wake from a checkpoint of another VM");
       const c = named ?? own.at(-1);
       if (!c) return error(409, "invalid_state_transition", `no available checkpoint to wake ${name} from`);
+      // Without an id, a stopped VM whose newest checkpoint is disk-only is refused: waking it
+      // would roll the disk back without the checkpoint being named.
+      if (!named && c.diskOnly && vm.state === "stopped") {
+        return error(
+          409,
+          "disk_rollback_not_named",
+          `${name} is stopped and its latest checkpoint ${c.id} is disk-only: start the VM (\`start_vm\`) to boot its current disk, or pass checkpoint_id ${c.id} to roll back`,
+        );
+      }
       // A disk-only checkpoint replaces a stopped VM's disk and boots it; a full one wakes a
       // hibernated VM with its memory.
       if (vm.state !== (c.diskOnly ? "stopped" : "hibernated")) return invalidState(name, vm, "wake from that checkpoint");

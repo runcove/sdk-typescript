@@ -1112,7 +1112,7 @@ export type DrainTarget = {
  * `snake_case`, `<subject>_<condition>`: the subject is
  * the thing that went wrong, not the endpoint.
  */
-export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
+export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
 
 /**
  * Data of the terminal `exit` event of `POST /vms/{name}/exec`.
@@ -2842,7 +2842,10 @@ export type VmTelemetrySeries = {
 export type WakeRequest = {
     /**
      * Specific checkpoint id to wake from. `None` → latest
-     * available for the VM. Stringified UUID v7; the server parses it.
+     * available for the VM, except on a `Stopped` VM whose latest is
+     * disk-only: that is refused (`disk_rollback_not_named`), so a disk
+     * rollback always names its checkpoint. Stringified UUID v7; the
+     * server parses it.
      */
     checkpoint_id?: string | null;
 };
@@ -9718,7 +9721,7 @@ export type WakeVmErrors = {
      */
     404: ApiError;
     /**
-     * Invalid state transition, or no available checkpoint. One shape only, the `ApiError` envelope: the wake path reserves nothing through admission, so no `DenyReason` can reach this response.
+     * Invalid state transition, or no available checkpoint (`invalid_state_transition`); or no `checkpoint_id` on a `Stopped` VM whose latest checkpoint is disk-only (`disk_rollback_not_named`, whose `message` names both ways forward). One shape only, the `ApiError` envelope: the wake path reserves nothing through admission, so no `DenyReason` can reach this response.
      */
     409: ApiError;
     /**
