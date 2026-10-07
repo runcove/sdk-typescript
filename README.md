@@ -753,7 +753,7 @@ Every admin operation is served on the external API listener of every host.
 | Fleet | `updateAutoPauseTimeouts`, `drainHost`, `getHostState`, `updateVmAgents`, `bulkStopVms`, `bulkDeleteVms` |
 | Projects | `listProjectMembers`, `createProjectMember`, `deleteProjectMember` |
 | Quotas | `getQuotaDefaults`, `getUserQuotaOverride`, `updateUserQuotaOverride`, `deleteUserQuotaOverride`, `createQuotaBypass`, `getTeamQuotaOverride`, `updateTeamQuotaOverride`, `deleteTeamQuotaOverride` |
-| Users | `listAllUsers`, `getUser`, `revokeUserSessions` |
+| Users | `listAllUsers`, `getUser`, `revokeUserSessions`, `offboardUser` |
 | Host-wide listings | `listAllVms` / `iterAllVms`, `listAnyCheckpoints` / `iterAnyCheckpoints`, `deleteAnyCheckpoint` |
 
 ```ts

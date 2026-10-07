@@ -20,10 +20,44 @@ import type {
   DrainHostParams,
   ListAllVmsParams,
   ListAnyCheckpointsParams,
+  OffboardUserReport,
+  OffboardUserRequest,
   ProjectMember,
   RevokeSessionsResponse,
   UpdateAgentsResponse,
 } from "../types.js";
+
+/** A value for an error message; never throws (a BigInt or a cycle included). */
+function describe(v: unknown): string {
+  try {
+    return JSON.stringify(v) ?? String(v);
+  } catch {
+    return typeof v === "bigint" ? `${v}n` : Object.prototype.toString.call(v);
+  }
+}
+
+/** Why `req` is not a well-formed offboarding request, or `undefined`. */
+function offboardRequestError(req: unknown): string | undefined {
+  // Plain objects only: a boxed boolean, a Map, a Date or a class instance
+  // is never a request, even one with no own keys that would read as `{}`.
+  if (typeof req !== "object" || req === null) {
+    return `the request must be a plain object like { dry_run: true }, got ${describe(req)}`;
+  }
+  const proto: unknown = Object.getPrototypeOf(req);
+  if (proto !== Object.prototype && proto !== null) {
+    return `the request must be a plain object like { dry_run: true }, got ${describe(req)}`;
+  }
+  // Every own key, non-enumerable and symbol ones included.
+  const extra = Reflect.ownKeys(req).filter((k) => k !== "dry_run");
+  if (extra.length > 0) {
+    return `unknown field(s) ${extra.map(String).join(", ")}; the only field is dry_run`;
+  }
+  const dryRun = (req as { dry_run?: unknown }).dry_run;
+  if (dryRun !== undefined && typeof dryRun !== "boolean") {
+    return `dry_run must be a boolean, got ${describe(dryRun)}`;
+  }
+  return undefined;
+}
 
 /**
  * `client.admin` — fleet administration: host-wide listings, bulk VM
@@ -39,9 +73,10 @@ import type {
  * A 404 means absent or not yours; the SDK never turns it into "forbidden".
  * Every operation here is served on the external API listener of every host.
  *
- * Five refuse every API key, an admin key included, with 401 `sudo_required`.
- * {@link updateVmAgents}, {@link bulkStopVms}, {@link bulkDeleteVms} and
- * {@link deleteAnyCheckpoint} need a recent interactive sign-in, so they run
+ * Six refuse every API key, an admin key included, with 401 `sudo_required`.
+ * {@link updateVmAgents}, {@link bulkStopVms}, {@link bulkDeleteVms},
+ * {@link deleteAnyCheckpoint} and {@link offboardUser} need a recent
+ * interactive sign-in, so they run
  * with a ticket or a session, never a key. {@link drainHost} is never served
  * on the Warpgate-fronted listener either: in practice a drain runs on the
  * host's Unix socket.
@@ -370,6 +405,59 @@ export class AdminResource {
       "POST",
       apiPath`/api/admin/users/${username}/revoke-sessions`,
       overrides,
+    );
+  }
+
+  /**
+   * Offboard one person: in one transaction their CLI sessions, connected
+   * apps, bound service keys, every direct share to them on any VM, their
+   * own personal and admin API keys and webhooks. Then, item by item: first
+   * Cove's own Warpgate role for them is deleted (`warpgate_role`),
+   * unbinding their VMs' targets (the targets stay; no other role is
+   * touched); next their Warpgate user is deleted (`warpgate_user`), taking
+   * their Warpgate roles, user API tokens, passwords, one-time codes and
+   * certificates with it (`outcome: "not_found"` when Warpgate has no such
+   * role or user, not a failure); then, belt and braces, their
+   * SSH keys at Warpgate (`ssh_keys_deleted`), every Warpgate ticket in their
+   * name (`tickets_deleted`) and every live Warpgate session of theirs
+   * (`sessions_closed`), pass after pass until one finds nothing new (three
+   * at most); then the credential sweep runs once more, to end what a
+   * still-open session created meanwhile; then every team they belong to,
+   * every secret in their own scope and every VM they own (stopped, never
+   * deleted). The answer reports each item, still with a 200 when some
+   * failed. A failed item is an entry with `ok: false` and an `error`, a VM,
+   * a `warpgate_role` or a `warpgate_user` with `outcome: "failed"`, any entry of `cli_sessions_failed` (a CLI
+   * session Warpgate could not delete; it has no `ok`), or a set
+   * `second_sweep_error` (the sweep after the sessions closed failed): run
+   * the call again. Send `{ dry_run: true }` to get the same report with
+   * nothing changed; a real run is `{ dry_run: false }` (the default) or an
+   * empty body, and anything else is a 400. The wrapper always sends an
+   * explicit `dry_run`, and rejects with a `TypeError`, sending nothing, when
+   * `req` is not a plain object whose only field is a boolean `dry_run`. Scope: `admin:sessions:write`. 403 not an administrator;
+   * 404 a user Cove knows nothing of (never signed in, and no membership,
+   * share, binding, key, webhook or VM names them).
+   * 401 `sudo_required` for every API key, an admin key included: it needs a
+   * ticket or a session (`AuthenticationError`).
+   */
+  offboardUser(
+    username: string,
+    req: Partial<OffboardUserRequest> = {},
+    overrides: RequestOverrides = {},
+  ): Promise<OffboardUserReport> {
+    // A JavaScript caller gets no excess-property check, and a malformed
+    // request read loosely would become a real offboarding where a preview
+    // was meant. So refuse anything but `{ dry_run?: boolean }`, sending
+    // nothing.
+    const bad = offboardRequestError(req);
+    if (bad !== undefined) {
+      return Promise.reject(new TypeError(`offboardUser: ${bad}`));
+    }
+    // Always an explicit boolean: the server refuses `{}`.
+    const body: OffboardUserRequest = { dry_run: req.dry_run === true };
+    return this.http.request<OffboardUserReport>(
+      "POST",
+      apiPath`/api/admin/users/${username}/offboard`,
+      { ...overrides, body },
     );
   }
 

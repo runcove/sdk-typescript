@@ -1525,6 +1525,378 @@ export type OciCacheEntry = {
 };
 
 /**
+ * One API key offboarding revoked (a personal or an admin key of the user).
+ */
+export type OffboardApiKey = {
+    id: string;
+    /**
+     * The key's label.
+     */
+    name: string;
+    /**
+     * The key's visible prefix (`cvk_…`), as `cove key ls` shows it.
+     */
+    prefix: string;
+};
+
+/**
+ * A CLI session (Warpgate ticket) of the user's that Warpgate could not
+ * delete: it still works, so it is a failed item. Re-running the offboarding
+ * retries it.
+ */
+export type OffboardCliSession = {
+    /**
+     * Why Warpgate did not delete it.
+     */
+    error: string;
+    /**
+     * Warpgate's ticket id.
+     */
+    id: string;
+};
+
+/**
+ * One connected app (an MCP client the user signed in through) revoked.
+ */
+export type OffboardConnectedApp = {
+    id: string;
+    /**
+     * The client's name as shown on its consent page.
+     */
+    name: string;
+};
+
+/**
+ * The outcome of deleting one of the user's own secrets.
+ */
+export type OffboardSecret = {
+    /**
+     * Why deleting failed, when `ok` is false.
+     */
+    error?: string | null;
+    /**
+     * The secret's name (never its value).
+     */
+    name: string;
+    ok: boolean;
+};
+
+/**
+ * One service key bound to the user, whose binding ended.
+ */
+export type OffboardServiceKey = {
+    /**
+     * How many active keys of that name were revoked.
+     */
+    keys_revoked: number;
+    /**
+     * The service name (`svc:<name>` owns its VMs).
+     */
+    name: string;
+};
+
+/**
+ * One of the user's live Warpgate sessions, on any target (the shell, the
+ * web UI or a VM), closed. An open session never asks the identity provider
+ * again, so offboarding closes every one.
+ */
+export type OffboardSession = {
+    /**
+     * Why closing (or listing) failed, when `ok` is false: the session is
+     * still open.
+     */
+    error?: string | null;
+    /**
+     * Warpgate's session id; `*` when the user's sessions could not be
+     * listed, or when sessions kept appearing (see `error`).
+     */
+    id: string;
+    ok: boolean;
+    /**
+     * Warpgate's ids of the targets the session is connected to (none
+     * for a sign-in with no connection yet).
+     */
+    targets?: Array<string>;
+};
+
+/**
+ * One direct share to the user withdrawn (on any VM, a bound service key's
+ * included).
+ */
+export type OffboardShare = {
+    /**
+     * The VM's name.
+     */
+    vm: string;
+};
+
+/**
+ * One of the user's SSH public keys at Warpgate, deleted. Such a key signs
+ * in without the identity provider, so offboarding removes every one.
+ */
+export type OffboardSshKey = {
+    /**
+     * Why deleting (or listing) failed, when `ok` is false: the key still
+     * works.
+     */
+    error?: string | null;
+    /**
+     * Warpgate's credential id; `*` when the user's keys could not be
+     * listed, or when keys kept appearing (see `error`).
+     */
+    id: string;
+    /**
+     * The label the key was added with.
+     */
+    name?: string | null;
+    ok: boolean;
+};
+
+/**
+ * The outcome of leaving one team.
+ */
+export type OffboardTeam = {
+    /**
+     * Why leaving failed, when `ok` is false.
+     */
+    error?: string | null;
+    ok: boolean;
+    /**
+     * The team's name.
+     */
+    team: string;
+};
+
+/**
+ * One Warpgate ticket in the user's name, deleted: a connect ticket, a
+ * port invite on one of their VMs, a CLI ticket Cove did not record, or one
+ * they requested at Warpgate. A ticket signs in without the identity
+ * provider, so offboarding deletes every one.
+ */
+export type OffboardTicket = {
+    /**
+     * Why deleting (or listing) failed, when `ok` is false: the ticket
+     * still works.
+     */
+    error?: string | null;
+    /**
+     * Warpgate's ticket id; `*` when the tickets could not be listed, or
+     * when tickets kept appearing (see `error`).
+     */
+    id: string;
+    ok: boolean;
+    /**
+     * The name of the target the ticket opens.
+     */
+    target?: string | null;
+};
+
+/**
+ * `POST /api/admin/users/{username}/offboard` response body: everything
+ * offboarding ended, or would end when `dry_run` is true. The credential
+ * lists (`cli_sessions_revoked` through `webhooks_disabled`) were changed in
+ * one transaction; Warpgate SSH keys, tickets and sessions, teams, secrets
+ * and VMs are handled one by one afterwards and each carries its own
+ * result, so one failure never hides the others.
+ */
+export type OffboardUserReport = {
+    /**
+     * The user's personal and admin API keys, revoked.
+     */
+    api_keys_revoked: Array<OffboardApiKey>;
+    /**
+     * CLI sessions Warpgate could not delete: they still work. Each is a
+     * failed item; a re-run retries them. Empty in a dry run.
+     */
+    cli_sessions_failed: Array<OffboardCliSession>;
+    /**
+     * CLI sessions (tickets) revoked.
+     */
+    cli_sessions_revoked: number;
+    /**
+     * The user's connected apps, revoked.
+     */
+    connected_apps_revoked: Array<OffboardConnectedApp>;
+    /**
+     * True when nothing was changed and this is only what would happen.
+     */
+    dry_run: boolean;
+    /**
+     * Set when the credential sweep that runs again after the Warpgate
+     * sessions are closed failed: anything a still-open session created in
+     * between may still be live, so run the offboarding again. A failed
+     * item. Never set in a dry run.
+     */
+    second_sweep_error?: string | null;
+    /**
+     * The user's own (user-scope) secrets, deleted, one result each.
+     */
+    secrets_deleted: Array<OffboardSecret>;
+    /**
+     * Why secrets outside the user's own scope stay.
+     */
+    secrets_kept: string;
+    /**
+     * Service keys bound to the user: binding ended, keys revoked.
+     */
+    service_keys: Array<OffboardServiceKey>;
+    /**
+     * The user's live Warpgate sessions on every target, closed after the
+     * tickets are deleted, one result each. Keys, tickets and sessions are
+     * handled again until a pass finds none left (at most three passes),
+     * and every pass is reported here. Empty when Cove runs without
+     * Warpgate.
+     */
+    sessions_closed: Array<OffboardSession>;
+    /**
+     * Direct shares to the user withdrawn, on any VM.
+     */
+    shares_withdrawn: Array<OffboardShare>;
+    /**
+     * The user's SSH public keys at Warpgate, deleted after the Warpgate
+     * user, one result each (deleting the user normally takes them with
+     * it, so this is usually empty). Empty when Cove runs without Warpgate.
+     */
+    ssh_keys_deleted: Array<OffboardSshKey>;
+    /**
+     * The teams the user was removed from, one result each.
+     */
+    teams_left: Array<OffboardTeam>;
+    /**
+     * The Warpgate tickets in the user's name, deleted after the keys, one
+     * result each. Empty when Cove runs without Warpgate.
+     */
+    tickets_deleted: Array<OffboardTicket>;
+    /**
+     * Whose account this is.
+     */
+    username: string;
+    /**
+     * The VMs the user owns, one result each.
+     */
+    vms_stopped: Array<OffboardVm>;
+    warpgate_role?: null | OffboardWarpgateRole;
+    warpgate_user?: null | OffboardWarpgateUser;
+    /**
+     * The user's webhook subscriptions, disabled (`owner-offboarded`).
+     */
+    webhooks_disabled: Array<OffboardWebhook>;
+};
+
+/**
+ * `POST /api/admin/users/{username}/offboard` request body. An absent body
+ * means `{"dry_run": false}`; a body must carry `dry_run`. An unknown field
+ * is refused, so a misspelt `dry_run` can never run the real offboarding.
+ */
+export type OffboardUserRequest = {
+    /**
+     * Report what offboarding would do and change nothing. Required in a
+     * body; only an absent body means `false`.
+     */
+    dry_run: boolean;
+};
+
+/**
+ * The outcome for one VM the user owns. VMs are stopped, never deleted or
+ * reassigned.
+ */
+export type OffboardVm = {
+    /**
+     * Why the stop failed, when `outcome` is `failed`.
+     */
+    error?: string | null;
+    outcome: OffboardVmOutcome;
+    /**
+     * The VM's name.
+     */
+    vm: string;
+};
+
+/**
+ * What happened to one VM the user owns. The server sends only `stopped`,
+ * `already_stopped` or `failed`. It never sends `unknown`: that is how a
+ * client reads an outcome newer than itself, and it counts as a failure.
+ */
+export type OffboardVmOutcome = 'stopped' | 'already_stopped' | 'failed' | 'unknown';
+
+/**
+ * Cove's per-user Warpgate role for the person (the one Cove creates for
+ * each user and binds to their VMs' targets), deleted in the Warpgate step
+ * just before their Warpgate user. Deleting the user only drops their
+ * membership; the role and its bindings would survive, and the person
+ * would get it back on signing in again. Only this role is deleted: any
+ * other role they hold, even one whose only member is them, stays. The
+ * VMs' targets stay too.
+ */
+export type OffboardWarpgateRole = {
+    /**
+     * Why finding or deleting the role failed, when `outcome` is `failed`.
+     */
+    error?: string | null;
+    /**
+     * Warpgate's id of the role, when Warpgate has it. Warpgate does not
+     * keep role names unique: when it held several roles with exactly this
+     * name, every one is deleted and this lists their ids, comma-separated.
+     */
+    id?: string | null;
+    /**
+     * The role's name at Warpgate.
+     */
+    name: string;
+    outcome: OffboardWarpgateRoleOutcome;
+};
+
+/**
+ * What happened to Cove's own Warpgate role for the user. The server sends
+ * only `deleted`, `not_found` or `failed`; `unknown` is how a client reads
+ * an outcome newer than itself, and it counts as a failure.
+ */
+export type OffboardWarpgateRoleOutcome = 'deleted' | 'not_found' | 'failed' | 'unknown';
+
+/**
+ * The person's Warpgate user, deleted first in the Warpgate step. A user
+ * API token, password, one-time code or certificate of theirs signs in
+ * without the identity provider, and their roles reach every target; all
+ * of it goes with the user. If they sign in again through the identity
+ * provider, Warpgate provisions a new user for them.
+ */
+export type OffboardWarpgateUser = {
+    /**
+     * Why finding or deleting the user failed, when `outcome` is `failed`.
+     */
+    error?: string | null;
+    /**
+     * Warpgate's id of the user, when Warpgate has one for them.
+     */
+    id?: string | null;
+    outcome: OffboardWarpgateUserOutcome;
+};
+
+/**
+ * What happened to the user's Warpgate user. The server sends only
+ * `deleted`, `not_found` or `failed`. It never sends `unknown`: that is how a
+ * client reads an outcome newer than itself, and it counts as a failure.
+ */
+export type OffboardWarpgateUserOutcome = 'deleted' | 'not_found' | 'failed' | 'unknown';
+
+/**
+ * One webhook subscription of the user's, disabled with reason
+ * `owner-offboarded`.
+ */
+export type OffboardWebhook = {
+    id: string;
+    /**
+     * `vm`, `user` or `server`.
+     */
+    scope: string;
+    /**
+     * The VM's name (its id when the VM is gone), for a `vm`-scope
+     * subscription.
+     */
+    vm?: string | null;
+};
+
+/**
  * Action that needs admission before it executes — the body of
  * `POST /host/reservations`.
  *
@@ -3926,6 +4298,63 @@ export type GetUserResponses = {
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
+export type OffboardUserData = {
+    /**
+     * Optional; `{"dry_run": true}` reports without changing anything. A real run is an empty body or `{"dry_run": false}`; anything else is refused.
+     */
+    body?: OffboardUserRequest;
+    path: {
+        /**
+         * Who to offboard.
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/users/{username}/offboard';
+};
+
+export type OffboardUserErrors = {
+    /**
+     * The body is neither empty nor a JSON object sent as `application/json` whose only field is a boolean `dry_run` (`validation_failed`); nothing ran.
+     *
+     * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
+     */
+    400: ApiError;
+    /**
+     * Interactive login is too old for this operation, or the caller used an API key (`{code: "sudo_required", message, reauth_window_secs}`, with `WWW-Authenticate: cove-reauth realm="sudo"`), or no usable credential at all (`credential_missing` / `credential_invalid` / `credential_expired`). The two answer with different bodies, so the schema is a union of both.
+     */
+    401: SensitiveOpUnauthorizedResponse;
+    /**
+     * Caller is not an administrator: the operation's own gate answers `{code: "admin_required"}`.
+     */
+    403: ApiError;
+    /**
+     * Cove knows nothing of this user: they never signed in, and no team membership, share, live service-key binding, active API key, active webhook subscription or VM names them.
+     */
+    404: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type OffboardUserError = OffboardUserErrors[keyof OffboardUserErrors];
+
+export type OffboardUserResponses = {
+    /**
+     * What was ended, item by item (or, in a dry run, what would be).
+     */
+    200: OffboardUserReport;
+};
+
+export type OffboardUserResponse = OffboardUserResponses[keyof OffboardUserResponses];
+
 export type RevokeUserSessionsData = {
     body?: never;
     path: {
@@ -5914,11 +6343,11 @@ export type ListTeamMembersErrors = {
      */
     401: ApiError;
     /**
-     * Caller is neither admin nor member.
+     * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `teams:read`.
      */
-    403: ApiError;
+    403: ScopeDeniedBody;
     /**
-     * No such team.
+     * No such team, or the caller is neither an administrator nor a member of it. The two answers are identical: the roster does not distinguish a team you cannot see from one that does not exist. `GET /api/teams` lists team names to every session.
      */
     404: ApiError;
     /**

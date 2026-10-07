@@ -280,6 +280,78 @@ test("admin.revokeUserSessions posts to /api/admin/users/{username}/revoke-sessi
   assert.deepEqual(out, { revoked: 3 });
 });
 
+test("admin.offboardUser posts dry_run to /api/admin/users/{username}/offboard", async () => {
+  const report = {
+    username: "a b",
+    dry_run: true,
+    cli_sessions_revoked: 0,
+    api_keys_revoked: [],
+    connected_apps_revoked: [],
+    service_keys: [],
+    shares_withdrawn: [],
+    webhooks_disabled: [],
+    warpgate_role: { name: "cove-a-b-0123456789ab", id: "r", outcome: "deleted" },
+    teams_left: [],
+    secrets_deleted: [],
+    secrets_kept: "",
+    vms_stopped: [{ vm: "v", outcome: "stopped" }],
+  };
+  const { calls, impl } = fakeFetch(json(report));
+  const out = await makeClient(impl).admin.offboardUser("a b", { dry_run: true });
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(pathOf(calls[0]), "/api/admin/users/a%20b/offboard");
+  assert.deepEqual(JSON.parse(calls[0].init.body), { dry_run: true });
+  assert.deepEqual(out, report);
+});
+
+test("unit_offboard_user_always_sends_an_explicit_dry_run", async () => {
+  // The server refuses `{}`, so neither a missing request nor an undefined
+  // field may send it: both are an explicit `dry_run: false`.
+  for (const req of [undefined, {}, { dry_run: undefined }, Object.create(null)]) {
+    const { calls, impl } = fakeFetch(json({}));
+    await makeClient(impl).admin.offboardUser("a", req);
+    assert.deepEqual(JSON.parse(calls[0].init.body), { dry_run: false });
+  }
+});
+
+test("unit_offboard_user_refuses_a_malformed_request_and_sends_nothing", async () => {
+  // A JavaScript caller gets no excess-property check: each of these would
+  // otherwise send `dry_run: false` and offboard for real where a preview
+  // was meant.
+  for (const req of [
+    true,
+    "dry",
+    null,
+    [],
+    { dryRun: true },
+    { dry_run: "true" },
+    { dry_run: 1 },
+    { dry_run: true, extra: 1 },
+    5n,
+    { dry_run: 1n },
+    // Objects with no own keys, or not plain objects: never a request.
+    new Boolean(true),
+    new Map([["dry_run", true]]),
+    new Date(0),
+    // Own keys a key listing would skip.
+    Object.defineProperty({}, "dryRun", { value: true, enumerable: false }),
+    { [Symbol("dry_run")]: true },
+    new (class Req {
+      constructor() {
+        this.dry_run = true;
+      }
+    })(),
+  ]) {
+    const { calls, impl } = fakeFetch(json({}));
+    await assert.rejects(
+      async () => makeClient(impl).admin.offboardUser("a", req),
+      TypeError,
+      `request ${String(req)} must be refused`,
+    );
+    assert.equal(calls.length, 0, `request ${String(req)} must send nothing`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // 1d — listings and checkpoints
 // ---------------------------------------------------------------------------
