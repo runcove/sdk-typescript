@@ -145,6 +145,20 @@ export class KeysResource {
   }
 
   /**
+   * Revoke an API key by presenting it: holding the key is the proof, so any
+   * key works, yours or one you found, and the call needs no scope (on the
+   * bearer listener, no credential at all). Resolves alike whether the key was
+   * live (it is revoked, as by its owner), already revoked, unknown or not a
+   * key, so it tells you nothing about it. Never log `token`.
+   */
+  revokeByToken(token: string, overrides: RequestOverrides = {}): Promise<void> {
+    return this.http.request<void>("POST", apiPath`/api/api-keys/revoke`, {
+      ...overrides,
+      body: { token },
+    });
+  }
+
+  /**
    * Rotate an API key (atomic mint + revoke). Scope: `keys:manage`.
    * Returns a replacement key with a new show-once raw token.
    */

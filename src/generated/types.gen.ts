@@ -165,6 +165,14 @@ export type AdminHostStateResponse = {
      */
     embedded_agent_version?: string | null;
     /**
+     * Presentations to `POST /api/api-keys/revoke` this process answered
+     * that revoked nothing (not a key, no matching key, already revoked).
+     * They write no audit row, so this counter is where they show. Not
+     * `required` in the schema: a daemon that predates it omits it, and the
+     * generated SDKs must still decode that daemon's answer.
+     */
+    key_presentations_ignored_total?: number;
+    /**
      * Total on-disk bytes for the orphaned checkpoints counted above
      * (best-effort fs scan; same informational-gauge contract as
      * `snapshot_images`).
@@ -2190,6 +2198,19 @@ export type ResizeResult = {
     actual_memory_mb: number;
     partial: boolean;
     reason?: string | null;
+};
+
+/**
+ * `POST /api/api-keys/revoke` request body: the key itself. Holding it is the
+ * proof, so the request carries no other credential. Fields other than
+ * `token` are ignored, so a secret-scanning partner may send its own
+ * metadata alongside.
+ */
+export type RevokeKeyByTokenRequest = {
+    /**
+     * The full API key, `cvk_` and all.
+     */
+    token: string;
 };
 
 /**
@@ -4670,6 +4691,47 @@ export type CreateApiKeyResponses = {
 };
 
 export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
+
+export type RevokeApiKeyByTokenData = {
+    body: RevokeKeyByTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/api/api-keys/revoke';
+};
+
+export type RevokeApiKeyByTokenErrors = {
+    /**
+     * The body is not a JSON object with a string `token` (invalid JSON, a missing or non-string `token`). Answered with code `validation_failed` and a fixed message: the error never repeats the body or the decoder's description, so a key sent as the bare body is not echoed back. A body sent without `Content-Type: application/json` gets `415`, not this.
+     */
+    400: ApiError;
+    /**
+     * The body is over 4 KiB.
+     */
+    413: unknown;
+    /**
+     * The body is not sent as `Content-Type: application/json`.
+     */
+    415: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type RevokeApiKeyByTokenError = RevokeApiKeyByTokenErrors[keyof RevokeApiKeyByTokenErrors];
+
+export type RevokeApiKeyByTokenResponses = {
+    /**
+     * Received. If the token was a live key, it is revoked.
+     */
+    202: unknown;
+};
 
 export type RevokeApiKeyData = {
     body?: never;

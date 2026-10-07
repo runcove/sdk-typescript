@@ -13,6 +13,8 @@ tags, and Cove server releases no longer carry the SDK.
 
 ### Added
 
+- **`client.keys.revokeByToken(token)` revokes an API key by presenting it** (`POST /api/api-keys/revoke`): any key you hold, yours or one you found, no scope needed. Resolves alike whether or not the key was live.
+
 - **A clone request can set the clone's idle-pause policy, expiry policy and tags.** `CloneRequest` gains optional `auto_pause_policy`, `ttl_policy` and `tags`; a clone that leaves them out keeps its source's (its expiry clock starts when the clone is created). The clone endpoint's documented errors now include a bad tag (400), more than 50 tags (409, `too_many_tags`) and an out-of-bounds policy (422).
 - **`vms.exec` takes `cwd`, `env`, `user` and `login`.** They set the working directory (relative to the account's home), add environment variables that win over the defaults, run the command as another account in the VM, or run it through that account's login shell. Options left unset are left out of the request, so a plain exec is unchanged. A VM whose guest agent is older refuses an exec that sets any of them.
 

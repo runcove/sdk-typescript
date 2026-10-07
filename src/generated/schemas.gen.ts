@@ -126,6 +126,7 @@ export type {
   ReservationRef,
   ResizeRequest,
   ResizeResult,
+  RevokeKeyByTokenRequest,
   RevokeSessionsResponse,
   RevokeShareOutcome,
   RotateSummary,
