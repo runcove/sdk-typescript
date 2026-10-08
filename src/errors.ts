@@ -184,7 +184,9 @@ export class ConflictError extends CoveAPIError {
   /**
    * Narrow a `vms.create` 409 (the contract's `VmCreateConflictResponse`, an
    * untagged union keyed on `code`) into why it was refused: a taken name, or
-   * a capacity/quota `DenyReason`. `undefined` for any other 409 body.
+   * a capacity/quota `DenyReason`. `undefined` for any other 409 body. A
+   * `vms.clone` 409 reads the same way, since a taken `new_vm_name` answers
+   * the same body; its state conflicts are `undefined`.
    */
   createConflict(): CreateConflict | undefined {
     const body = this.body;

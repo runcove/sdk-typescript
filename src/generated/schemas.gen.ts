@@ -172,6 +172,7 @@ export type {
   UserQuota,
   UserStatus,
   VmBadRequestResponse,
+  VmCloneConflictResponse,
   VmConflictResponse,
   VmConsole,
   VmCountResult,

@@ -620,7 +620,10 @@ export function mockFetch(): typeof fetch {
     if (method === "POST" && action === "clone") {
       if (!running && vm.state !== "paused") return invalidState(name, vm, "clone");
       const target: string = body.new_vm_name;
-      if (vms.has(target)) return error(409, "invalid_state_transition", `new VM name already taken: ${target}`);
+      // The server's body: create's `vm_name_taken`, which carries the name.
+      if (vms.has(target)) {
+        return json({ code: "vm_name_taken", message: `name "${target}" is already taken`, name: target }, 409);
+      }
       // A clone without a checkpoint id is made from an implicit checkpoint of the source now.
       let from: Checkpoint;
       if (body.source_checkpoint_id) {

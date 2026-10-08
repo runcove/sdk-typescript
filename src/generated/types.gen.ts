@@ -2898,20 +2898,40 @@ export type UserStatus = {
 export type VmBadRequestResponse = ApiError | InvalidVmNameBody;
 
 /**
- * The 409 body of `resizeVm` and `cloneVm`, which refuse for two different
- * reasons and answer with a different shape for each.
+ * The 409 body of `cloneVm`, which refuses for three different reasons and
+ * answers with a different shape for each (same treatment as
+ * [`VmConflictResponse`]).
+ *
+ * - A **taken name** returns [`VmNameTakenBody`], the same body `createVm`
+ * answers: `new_vm_name` is held by a live VM, or is still inside the
+ * post-delete cooldown, in which case `retry_after_secs` says how long is
+ * left. `code` is `vm_name_taken`.
+ * - A **state conflict** — `source` is not `Running`/`Paused`, or the
+ * checkpoint cannot be cloned — returns the ordinary `ApiError` envelope.
+ * `code` is `invalid_state_transition`.
+ * - A **capacity or quota denial** returns a `DenyReason`, carrying the
+ * numbers behind the refusal so a caller can retry smaller or wait.
+ *
+ * All three key their machine-readable discriminant on `code`: `vm_name_taken`
+ * and `invalid_state_transition` from [`cove_types::ErrorCode`], a
+ * capacity/quota reason (`ram_headroom_exceeded`, …) for `DenyReason`.
+ */
+export type VmCloneConflictResponse = VmNameTakenBody | ApiError | DenyReason;
+
+/**
+ * The 409 body of `resizeVm`, which refuses for two different reasons and
+ * answers with a different shape for each.
  *
  * - A **capacity or quota denial** returns a `DenyReason`, carrying the numbers
  * behind the refusal (what is in use, what was asked for, what the cap is),
  * so a caller can decide whether to retry smaller or wait.
- * - A **state or name conflict** — the VM is in the wrong state, or the
- * requested name is taken — returns the ordinary `ApiError` envelope, and will
- * keep failing until that changes.
+ * - A **state conflict** — the VM is in the wrong state — returns the ordinary
+ * `ApiError` envelope, and will keep failing until that changes.
  *
  * Both branches key their machine-readable discriminant on `code`
  * — but from two different closed catalogues: `DenyReason.code` is a
  * capacity/quota reason (`ram_headroom_exceeded`, …), `ApiError.code` is
- * [`cove_types::ErrorCode`] (`invalid_state_transition`, `vm_name_taken`, …).
+ * [`cove_types::ErrorCode`] (`invalid_state_transition`, …).
  */
 export type VmConflictResponse = ApiError | DenyReason;
 
@@ -10294,9 +10314,9 @@ export type CloneVmErrors = {
      */
     404: ApiError;
     /**
-     * The new name is already taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`). The two answer with different bodies, so the schema is a union of both: a state/name conflict returns the `ApiError` envelope, a denial returns a `DenyReason` carrying the numbers behind the refusal.
+     * `new_vm_name` is taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`). These answer with different bodies, so the schema is a union of them: a taken name answers `vm_name_taken` with the same body as `createVm` — `name`, plus `retry_after_secs` when the name belonged to a VM deleted too recently and is still in its post-delete cooldown; a state conflict returns the `ApiError` envelope; a denial returns a `DenyReason` carrying the numbers behind the refusal.
      */
-    409: VmConflictResponse;
+    409: VmCloneConflictResponse;
     /**
      * An override is out of bounds (`validation_failed`): in `ttl_policy`, an `on_stop` that deletes after a delay needs a delay of 60 to 315360000 seconds (ten years), and `max_lifetime_secs` must be absent or 3600 to 315360000; in `auto_pause_policy`, `idle_timeout_secs` must be between 60 and 86400.
      */
