@@ -25,6 +25,7 @@ import type {
   ProxyInvite,
   ProxyPortInfo,
   ProxyUrlInfo,
+  RemovalResponse,
   ResizeRequest,
   ResizeResult,
   RevokeShareOutcome,
@@ -302,21 +303,39 @@ export class VmsResource {
     return this.http.request<ProxyUrlInfo>("GET", apiPath`/api/vms/${name}/url`, overrides);
   }
 
-  /** Expose a guest port through the HTTPS proxy. Scope: `ports:write`. 201 created, 422 on validation failure. */
+  /**
+   * Expose a guest port through the HTTPS proxy. Scope: `ports:write`. 201
+   * created, 200 when the port was already published (idempotent: a retry, or
+   * the primary port, comes back unchanged), 422 on validation failure.
+   * Resolves to the port and its URL; `undefined` from a server older than API
+   * version 7, which answers without a body.
+   */
   addPort(
     name: string,
     req: AddPortRequest,
     overrides: RequestOverrides = {},
-  ): Promise<void> {
-    return this.http.request<void>("POST", apiPath`/api/vms/${name}/ports`, {
-      ...overrides,
-      body: req,
-    });
+  ): Promise<ProxyPortInfo | undefined> {
+    return this.http.request<ProxyPortInfo | undefined>(
+      "POST",
+      apiPath`/api/vms/${name}/ports`,
+      {
+        ...overrides,
+        body: req,
+      },
+    );
   }
 
-  /** Remove an exposed port. Scope: `ports:write`. */
-  removePort(name: string, port: number, overrides: RequestOverrides = {}): Promise<void> {
-    return this.http.request<void>(
+  /**
+   * Remove an exposed port. Scope: `ports:write`. Idempotent: `existed` is
+   * `false` when the port was not published; `undefined` from a server older
+   * than API version 7, which does not say.
+   */
+  removePort(
+    name: string,
+    port: number,
+    overrides: RequestOverrides = {},
+  ): Promise<RemovalResponse | undefined> {
+    return this.http.request<RemovalResponse | undefined>(
       "DELETE",
       apiPath`/api/vms/${name}/ports/${port}`,
       overrides,

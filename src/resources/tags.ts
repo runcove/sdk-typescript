@@ -1,5 +1,11 @@
 import { apiPath, type CoveHttp, type RequestOverrides } from "../http.js";
-import type { SetTagRequest, SetVmTeamRequest, TagEntry, TagSummary } from "../types.js";
+import type {
+  RemovalResponse,
+  SetTagRequest,
+  SetVmTeamRequest,
+  TagEntry,
+  TagSummary,
+} from "../types.js";
 
 /** `client.tags` — VM tags and team attribution. */
 export class TagsResource {
@@ -29,9 +35,17 @@ export class TagsResource {
     });
   }
 
-  /** Delete a tag (idempotent — succeeds even if already absent). Scope: `tags:write`. */
-  delete(name: string, key: string, overrides: RequestOverrides = {}): Promise<void> {
-    return this.http.request<void>(
+  /**
+   * Delete a tag (idempotent — succeeds even if already absent). Scope:
+   * `tags:write`. `existed` is `false` when the key was not set; `undefined`
+   * from a server older than API version 7, which does not say.
+   */
+  delete(
+    name: string,
+    key: string,
+    overrides: RequestOverrides = {},
+  ): Promise<RemovalResponse | undefined> {
+    return this.http.request<RemovalResponse | undefined>(
       "DELETE",
       apiPath`/api/vms/${name}/tags/${key}`,
       overrides,

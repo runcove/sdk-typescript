@@ -120,6 +120,7 @@ export type {
   QuotaUsageCount,
   QuotaUsageSize,
   RamCapacity,
+  RemovalResponse,
   RemoveMemberOutcome,
   RenameBody,
   ReplayWebhookDeliveryResponse,

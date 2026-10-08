@@ -43,7 +43,7 @@ test("builds URL against baseUrl (trailing slash stripped) and sets standard hea
   assert.equal(calls[0].url, "https://cove.test/api/vms");
   const headers = calls[0].init.headers;
   assert.equal(headers.get("Authorization"), "Bearer cvk_x");
-  assert.equal(headers.get("X-Cove-Api-Version"), "6");
+  assert.equal(headers.get("X-Cove-Api-Version"), "7");
   assert.equal(headers.get("Accept"), "application/json");
 });
 
@@ -89,6 +89,35 @@ test("JSON body sets Content-Type and method", async () => {
 test("empty 204 body resolves to undefined", async () => {
   const { impl } = fakeFetch(empty());
   assert.equal(await makeClient(impl).vms.stop("web-1"), undefined);
+});
+
+test("addPort resolves to the port, whether new (201) or already published (200)", async () => {
+  const port = { port: 80, public: true, is_primary: true, url: "https://web-1.test/" };
+  for (const status of [201, 200]) {
+    const { calls, impl } = fakeFetch(json(port, status));
+    assert.deepEqual(await makeClient(impl).vms.addPort("web-1", { port: 80 }), port);
+    assert.equal(calls[0].init.method, "POST");
+  }
+});
+
+test("addPort against a server older than API version 7 (empty 201) resolves to undefined", async () => {
+  const { calls, impl } = fakeFetch(empty(201));
+  assert.equal(await makeClient(impl).vms.addPort("web-1", { port: 80 }), undefined);
+  assert.equal(calls[0].init.method, "POST");
+});
+
+test("removePort and tags.delete resolve to whether the thing existed", async () => {
+  for (const existed of [true, false]) {
+    const { calls, impl } = fakeFetch(json({ existed }));
+    const client = makeClient(impl);
+    assert.deepEqual(await client.vms.removePort("web-1", 8080), { existed });
+    assert.deepEqual(await client.tags.delete("web-1", "env"), { existed });
+    assert.equal(calls[0].url, "https://cove.test/api/vms/web-1/ports/8080");
+    assert.equal(calls[1].url, "https://cove.test/api/vms/web-1/tags/env");
+  }
+  // A server older than API version 7 answers an empty 204: undefined.
+  const { impl } = fakeFetch(empty());
+  assert.equal(await makeClient(impl).tags.delete("web-1", "env"), undefined);
 });
 
 test("error response maps to typed error with code and body", async () => {
@@ -424,7 +453,7 @@ test("caller headers cannot displace the SDK's own", async () => {
   assert.equal(headers.get("Authorization"), "Bearer cvk_x");
   assert.equal(headers.get("Accept"), "application/json");
   assert.equal(headers.get("Content-Type"), "application/json");
-  assert.equal(headers.get("X-Cove-Api-Version"), "6");
+  assert.equal(headers.get("X-Cove-Api-Version"), "7");
 });
 
 test("a malformed caller header is refused as a CoveError, not a bare TypeError", async () => {

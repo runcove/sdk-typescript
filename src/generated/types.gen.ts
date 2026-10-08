@@ -2124,6 +2124,19 @@ export type RamCapacity = {
 };
 
 /**
+ * Body of an idempotent removal (`DELETE /vms/{name}/tags/{key}`,
+ * `DELETE /vms/{name}/ports/{port}`): whether the thing was there. Removing
+ * something absent still succeeds, with `existed: false`, so a caller can
+ * tell a typo or a repeat from a real removal.
+ */
+export type RemovalResponse = {
+    /**
+     * `true` when this call removed it; `false` when it was already absent.
+     */
+    existed: boolean;
+};
+
+/**
  * Fail-loud member-removal outcome (the share-revoke shape, generalized to teams).
  *
  * This is the ONE `RemoveMemberOutcome` that gets `ToSchema`. The
@@ -8968,10 +8981,16 @@ export type CreateVmPortError = CreateVmPortErrors[keyof CreateVmPortErrors];
 
 export type CreateVmPortResponses = {
     /**
-     * Port added.
+     * Port was already published; nothing changed.
      */
-    201: unknown;
+    200: ProxyPortInfo;
+    /**
+     * Port published.
+     */
+    201: ProxyPortInfo;
 };
+
+export type CreateVmPortResponse = CreateVmPortResponses[keyof CreateVmPortResponses];
 
 export type DeleteVmPortData = {
     body?: never;
@@ -9026,7 +9045,11 @@ export type DeleteVmPortError = DeleteVmPortErrors[keyof DeleteVmPortErrors];
 
 export type DeleteVmPortResponses = {
     /**
-     * Removed.
+     * Unpublished, or was not published (`existed` says which).
+     */
+    200: RemovalResponse;
+    /**
+     * Same, for a client declaring an API version below 7.
      */
     204: void;
 };
@@ -9925,7 +9948,11 @@ export type DeleteVmTagError = DeleteVmTagErrors[keyof DeleteVmTagErrors];
 
 export type DeleteVmTagResponses = {
     /**
-     * Deleted (or was already absent).
+     * Deleted, or was already absent (`existed` says which).
+     */
+    200: RemovalResponse;
+    /**
+     * Same, for a client declaring an API version below 7.
      */
     204: void;
 };
