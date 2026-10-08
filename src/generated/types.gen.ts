@@ -7247,7 +7247,7 @@ export type ListVmsData = {
         /**
          * Repeatable tag filter with AND semantics, e.g. `?tag=env=prod&tag=region=eu`. Each must be `key=value` with a non-empty key, split on the first `=` (an empty value matches a tag set to the empty string). An entry without `=`, or with an empty key, is a 400 `validation_failed` with `field: "tag"`; there is no key-only filter.
          */
-        tag?: string;
+        tag?: Array<string>;
     };
     url: '/api/vms';
 };

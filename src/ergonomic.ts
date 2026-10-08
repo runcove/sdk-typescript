@@ -331,7 +331,8 @@ export type ListApiKeysParams = NonNullable<ListApiKeysData["query"]>;
 /**
  * Query of `client.vms.list` / `iter`. `state` is a `VmState`. `tag` is
  * repeatable (`key=value` filters, AND semantics): pass an array to send
- * several. The contract declares both as a single `string`. The server
+ * several, or one string for a single filter. The contract declares `state`
+ * as a plain `string` and `tag` as a list of strings. The server
  * refuses a filter value it cannot apply rather than ignoring it: an unknown
  * `state`, a `tag` without `=` or with an empty key, or `limit: 0` throws a
  * 400 `validation_failed` whose `field` names the parameter. The server also

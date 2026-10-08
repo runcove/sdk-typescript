@@ -20,6 +20,7 @@ tags, and Cove server releases no longer carry the SDK.
 
 ### Changed
 
+- **The generated `ListVmsData` query types `tag` as `Array<string>`, as the contract now declares it.** `client.vms.list` / `iter` still take one string or an array (`ListVmsParams`).
 - **The set-expiry request (`UpdateTtlPolicyRequest`) takes `expires_in`, an expiry counted from now that keeps the VM's `on_stop`, as an alternative to `policy`, which is now optional.** Send exactly one; the server answers 422 otherwise. A new `ExpiresIn` model carries `secs` (3600 to 315360000, or null to remove the expiry). The operation now documents its 422, and the `TtlPolicy` and create and clone texts give the ten-year ceiling.
 - **`admin.revokeUserSessions` can fail with 503 `unavailable`** when the bastion kept one of the person's CLI sessions; those sessions stay valid and calling again retries only them. It used to answer success with them still valid. `keys.revoke`'s docs say an administrator can revoke anyone's key.
 - **`ErrorCode` gains `disk_rollback_not_named`**: `vms.wake` with no `checkpoint_id`, on a stopped VM whose latest checkpoint is disk-only, is refused with this 409 and changes nothing, where the server used to roll the disk back. `vms.wake`'s docs, the wake operation's and `WakeRequest.checkpoint_id`'s say so.
