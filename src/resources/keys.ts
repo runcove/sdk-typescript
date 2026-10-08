@@ -136,9 +136,10 @@ export class KeysResource {
   }
 
   /**
-   * Revoke an API key. Scope: `keys:manage`.
-   * Requests with the key are refused 401 at once; streams already open with it
-   * (events, console, exec) end within the server's 15 s re-check interval.
+   * Revoke an API key: your own, or anyone's as an administrator (signed in or
+   * through an admin key). Scope: `keys:manage`. Requests with the key are
+   * refused 401 at once; streams already open with it (events, console, exec)
+   * end within the server's 15 s re-check interval.
    */
   revoke(id: string, overrides: RequestOverrides = {}): Promise<void> {
     return this.http.request<void>("DELETE", apiPath`/api/api-keys/${id}`, overrides);

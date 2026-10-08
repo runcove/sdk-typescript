@@ -395,7 +395,9 @@ export class AdminResource {
    * Invalidate every session one person holds; answers how many. Also revokes
    * the person's connected apps; the count is CLI sessions only. Scope:
    * `admin:sessions:write`. 403 not an administrator; 404 means absent or not
-   * yours.
+   * yours. 503 `unavailable` when the bastion kept any CLI session: those
+   * stay valid, everything else was revoked, and repeating the call retries
+   * only the sessions left.
    */
   revokeUserSessions(
     username: string,

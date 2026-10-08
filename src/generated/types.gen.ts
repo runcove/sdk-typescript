@@ -4423,6 +4423,10 @@ export type RevokeUserSessionsErrors = {
      * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
+    /**
+     * The bastion kept at least one of the person's CLI sessions (it refused the delete or could not be reached), so those sessions are still valid. Everything else was revoked. `code` is `unavailable` and `message` says how many sessions survived; repeat the call to retry them.
+     */
+    503: ApiError;
 };
 
 export type RevokeUserSessionsError = RevokeUserSessionsErrors[keyof RevokeUserSessionsErrors];
@@ -4771,7 +4775,7 @@ export type RevokeApiKeyErrors = {
      */
     403: ScopeDeniedBody;
     /**
-     * No such key (or not owned by the caller).
+     * No such active key, or one the caller may not revoke.
      */
     404: ApiError;
     /**
