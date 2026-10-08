@@ -7320,7 +7320,7 @@ export type CreateVmErrors = {
      */
     409: VmCreateConflictResponse;
     /**
-     * Validation failed: resource bounds; a `ttl_policy.max_lifetime_secs` outside 3600 to 315360000 seconds (ten years); a delete-after-stop grace outside 60 to 315360000 seconds; an `auto_pause_policy` idle timeout outside 60 to 86400 seconds; or `nested_virt` set for an image with no golden disk on this host (it must cold-boot). A name the validator rejects is a **400**, not a 422 — see above.
+     * Validation failed: resource bounds; a `ttl_policy.max_lifetime_secs` outside 3600 to 315360000 seconds (ten years); a delete-after-stop grace outside 60 to 315360000 seconds; an `auto_pause_policy` idle timeout outside 60 to 86400 seconds; `nested_virt` set for an image with no golden disk on this host (it must cold-boot); or, on a Mac, a body asking for nested virtualisation or an OCI image, neither of which a Mac can run. A name the validator rejects is a **400**, not a 422 — see above.
      */
     422: ApiError;
     /**
