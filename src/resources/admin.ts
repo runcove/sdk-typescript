@@ -18,6 +18,7 @@ import type {
   AdminVmSummary,
   AdminVmSummaryPage,
   DrainHostParams,
+  EnableUserResponse,
   ListAllVmsParams,
   ListAnyCheckpointsParams,
   OffboardUserReport,
@@ -73,10 +74,10 @@ function offboardRequestError(req: unknown): string | undefined {
  * A 404 means absent or not yours; the SDK never turns it into "forbidden".
  * Every operation here is served on the external API listener of every host.
  *
- * Six refuse every API key, an admin key included, with 401 `sudo_required`.
+ * Seven refuse every API key, an admin key included, with 401 `sudo_required`.
  * {@link updateVmAgents}, {@link bulkStopVms}, {@link bulkDeleteVms},
- * {@link deleteAnyCheckpoint} and {@link offboardUser} need a recent
- * interactive sign-in, so they run
+ * {@link deleteAnyCheckpoint}, {@link offboardUser} and {@link enableUser}
+ * need a recent interactive sign-in, so they run
  * with a ticket or a session, never a key. {@link drainHost} is never served
  * on the Warpgate-fronted listener either: in practice a drain runs on the
  * host's Unix socket.
@@ -460,6 +461,25 @@ export class AdminResource {
       "POST",
       apiPath`/api/admin/users/${username}/offboard`,
       { ...overrides, body },
+    );
+  }
+
+  /**
+   * Let a person an offboarding shut out back in. While shut out, every
+   * request of theirs is refused with 403 `user_disabled`, and nothing that
+   * would hand them a credential or a way in is created, whoever asks. Answers
+   * the shut-out that was cleared (when, by whom, why); nothing offboarding
+   * ended comes back. The name is matched regardless of ASCII case. Writes a
+   * `user.enabled` audit row. Scope: `admin:sessions:write`. 403 not an
+   * administrator; 404 the person is not disabled. 401 `sudo_required` for
+   * every API key, an admin key included: it needs a ticket or a session
+   * (`AuthenticationError`).
+   */
+  enableUser(username: string, overrides: RequestOverrides = {}): Promise<EnableUserResponse> {
+    return this.http.request<EnableUserResponse>(
+      "POST",
+      apiPath`/api/admin/users/${username}/enable`,
+      overrides,
     );
   }
 

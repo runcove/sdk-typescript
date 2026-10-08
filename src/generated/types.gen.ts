@@ -330,6 +330,13 @@ export type AdminTeamQuotaOverrideResponse = {
  */
 export type AdminUserSummary = {
     created_at: string;
+    /**
+     * When offboarding shut this person out (RFC 3339, UTC): every request
+     * of theirs is refused 403 `user_disabled` until an administrator
+     * enables them again. Absent when they are not disabled, and from a
+     * server that predates this.
+     */
+    disabled_at?: string | null;
     display_name?: string | null;
     last_seen_at: string;
     usage: UserQuota;
@@ -1107,6 +1114,29 @@ export type DrainTarget = {
 };
 
 /**
+ * `POST /api/admin/users/{username}/enable` response: the shut-out record
+ * that was cleared, as it stood.
+ */
+export type EnableUserResponse = {
+    /**
+     * When offboarding shut them out (RFC 3339, UTC).
+     */
+    disabled_at: string;
+    /**
+     * The administrator whose offboarding shut them out.
+     */
+    disabled_by: string;
+    /**
+     * Why (`offboarded`).
+     */
+    reason: string;
+    /**
+     * Who was enabled, as the record spelled the name.
+     */
+    username: string;
+};
+
+/**
  * A machine-readable error code from the REST API's `ApiError.code` field.
  *
  * **Not** the vocabulary of the 409 admission/quota body: `DenyReason` keys its
@@ -1120,7 +1150,7 @@ export type DrainTarget = {
  * `snake_case`, `<subject>_<condition>`: the subject is
  * the thing that went wrong, not the endpoint.
  */
-export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
+export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'user_disabled' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
 
 /**
  * Data of the terminal `exit` event of `POST /vms/{name}/exec`.
@@ -1689,8 +1719,9 @@ export type OffboardTeam = {
 /**
  * One Warpgate ticket in the user's name, deleted: a connect ticket, a
  * port invite on one of their VMs, a CLI ticket Cove did not record, or one
- * they requested at Warpgate. A ticket signs in without the identity
- * provider, so offboarding deletes every one.
+ * they requested at Warpgate; or a port invite they minted on a VM someone
+ * else owns, which is in the owner's name. A ticket signs in without the
+ * identity provider, so offboarding deletes every one.
  */
 export type OffboardTicket = {
     /**
@@ -1737,6 +1768,15 @@ export type OffboardUserReport = {
      */
     connected_apps_revoked: Array<OffboardConnectedApp>;
     /**
+     * True when the person is now shut out of Cove (in a dry run: would
+     * be): every request they make, and anything that would hand them a
+     * credential or a way in, is refused with 403 `user_disabled` until an
+     * administrator enables them again (`POST
+     * /api/admin/users/{username}/enable`). False from a server that
+     * predates this.
+     */
+    disabled?: boolean;
+    /**
      * True when nothing was changed and this is only what would happen.
      */
     dry_run: boolean;
@@ -1782,8 +1822,11 @@ export type OffboardUserReport = {
      */
     teams_left: Array<OffboardTeam>;
     /**
-     * The Warpgate tickets in the user's name, deleted after the keys, one
-     * result each. Empty when Cove runs without Warpgate.
+     * The Warpgate tickets in the user's name, and every port invite the
+     * user minted on any VM (on a VM someone else owns it is a ticket in
+     * the owner's name; its `vm.invite.created` audit row names the user),
+     * deleted after the keys, one result each. Empty when Cove runs without
+     * Warpgate.
      */
     tickets_deleted: Array<OffboardTicket>;
     /**
@@ -4368,6 +4411,54 @@ export type GetUserResponses = {
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
+export type EnableUserData = {
+    body?: never;
+    path: {
+        /**
+         * Who to let back in.
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/users/{username}/enable';
+};
+
+export type EnableUserErrors = {
+    /**
+     * Interactive login is too old for this operation, or the caller used an API key (`{code: "sudo_required", message, reauth_window_secs}`, with `WWW-Authenticate: cove-reauth realm="sudo"`), or no usable credential at all (`credential_missing` / `credential_invalid` / `credential_expired`). The two answer with different bodies, so the schema is a union of both.
+     */
+    401: SensitiveOpUnauthorizedResponse;
+    /**
+     * Caller is not an administrator: the operation's own gate answers `{code: "admin_required"}`.
+     */
+    403: ApiError;
+    /**
+     * The person is not disabled (`resource_not_found`): offboarding never shut them out, or an administrator already let them back in.
+     */
+    404: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type EnableUserError = EnableUserErrors[keyof EnableUserErrors];
+
+export type EnableUserResponses = {
+    /**
+     * The shut-out that was cleared, as it stood.
+     */
+    200: EnableUserResponse;
+};
+
+export type EnableUserResponse2 = EnableUserResponses[keyof EnableUserResponses];
+
 export type OffboardUserData = {
     /**
      * Optional; `{"dry_run": true}` reports without changing anything. A real run is an empty body or `{"dry_run": false}`; anything else is refused.
@@ -4399,9 +4490,13 @@ export type OffboardUserErrors = {
      */
     403: ApiError;
     /**
-     * Cove knows nothing of this user: they never signed in, and no team membership, share, live service-key binding, active API key, active webhook subscription or VM names them.
+     * Cove knows nothing of this user: they never signed in, and no team membership, share, live service-key binding, active API key, active webhook subscription, VM or earlier offboarding names them.
      */
     404: ApiError;
+    /**
+     * The administrator named themselves (compared regardless of ASCII case), or, in a real run, the last administrator in `[auth] admins` who is not disabled: offboarding would leave nobody to let anyone back in (`validation_failed`); nothing ran.
+     */
+    422: ApiError;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *

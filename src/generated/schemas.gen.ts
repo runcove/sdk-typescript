@@ -62,6 +62,7 @@ export type {
   DiskCapacity,
   DiskFormat,
   DrainTarget,
+  EnableUserResponse,
   ErrorCode,
   ExecExit,
   ExecOutputDto,

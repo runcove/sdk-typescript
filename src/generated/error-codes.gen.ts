@@ -46,6 +46,7 @@ export const ERROR_CODES = [
   "scope_denied",
   "sudo_required",
   "ticket_required",
+  "user_disabled",
   "platform_not_available",
   "cli_distribution_not_configured",
   "webhook_not_found",

@@ -280,6 +280,20 @@ test("admin.revokeUserSessions posts to /api/admin/users/{username}/revoke-sessi
   assert.deepEqual(out, { revoked: 3 });
 });
 
+test("admin.enableUser posts to /api/admin/users/{username}/enable", async () => {
+  const cleared = {
+    username: "a b",
+    disabled_at: "2026-10-07T00:00:00Z",
+    disabled_by: "root",
+    reason: "offboarded",
+  };
+  const { calls, impl } = fakeFetch(json(cleared));
+  const out = await makeClient(impl).admin.enableUser("a b");
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(pathOf(calls[0]), "/api/admin/users/a%20b/enable");
+  assert.deepEqual(out, cleared);
+});
+
 test("admin.offboardUser posts dry_run to /api/admin/users/{username}/offboard", async () => {
   const report = {
     username: "a b",
