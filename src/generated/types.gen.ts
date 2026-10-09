@@ -2382,11 +2382,36 @@ export type ScopedImportResult = {
 };
 
 /**
- * Single row in the `GET /vms/{name}/secrets` list response. Names
- * only — values are never exposed via HTTP.
+ * One row of a secret listing (`GET /vms/{name}/secrets`, and the user,
+ * team and project listings): the secret's name, how it reaches the VM and
+ * how long it lasts. Never its value, nor anything derived from it: values
+ * are never exposed via HTTP.
  */
 export type SecretEntryDto = {
+    /**
+     * How the VM receives it: `file`, `fifo` or `env` (an environment
+     * variable of `target_unit`). Every current server sends it.
+     */
+    exposure?: string;
+    /**
+     * How long it lasts: `persistent`, `setup_only` (removed after setup,
+     * grouped by `setup_tag`) or `ttl` (removed after `ttl_seconds`). Every
+     * current server sends it.
+     */
+    lifetime?: string;
     name: string;
+    /**
+     * The tag a `setup_only` secret was set with. Omitted when it has none.
+     */
+    setup_tag?: string | null;
+    /**
+     * The systemd unit that receives an `env` secret. Omitted otherwise.
+     */
+    target_unit?: string | null;
+    /**
+     * Seconds a `ttl` secret lasts. Omitted otherwise.
+     */
+    ttl_seconds?: number | null;
 };
 
 /**
@@ -6068,7 +6093,7 @@ export type ListProjectSecretsError = ListProjectSecretsErrors[keyof ListProject
 
 export type ListProjectSecretsResponses = {
     /**
-     * Secret names.
+     * The secrets, without their values: name, exposure and lifetime of each.
      */
     200: SecretNameList;
 };
@@ -6737,7 +6762,7 @@ export type ListTeamSecretsError = ListTeamSecretsErrors[keyof ListTeamSecretsEr
 
 export type ListTeamSecretsResponses = {
     /**
-     * Secret names.
+     * The secrets, without their values: name, exposure and lifetime of each.
      */
     200: SecretNameList;
 };
@@ -7073,7 +7098,7 @@ export type ListUserSecretsError = ListUserSecretsErrors[keyof ListUserSecretsEr
 
 export type ListUserSecretsResponses = {
     /**
-     * Secret names.
+     * The secrets, without their values: name, exposure and lifetime of each.
      */
     200: SecretNameList;
 };
@@ -9540,7 +9565,7 @@ export type ListVmSecretsError = ListVmSecretsErrors[keyof ListVmSecretsErrors];
 
 export type ListVmSecretsResponses = {
     /**
-     * Secret names.
+     * The VM's secrets, without their values.
      */
     200: SecretNameList;
 };
