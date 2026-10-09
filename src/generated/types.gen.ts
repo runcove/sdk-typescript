@@ -1167,7 +1167,7 @@ export type EnableUserResponse = {
  * `snake_case`, `<subject>_<condition>`: the subject is
  * the thing that went wrong, not the endpoint.
  */
-export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'user_disabled' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
+export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'user_never_signed_in' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'user_disabled' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
 
 /**
  * Data of the terminal `exit` event of `POST /vms/{name}/exec`.
@@ -1338,10 +1338,12 @@ export type FileUploaded = {
 };
 
 /**
- * Grant result. `user_known` is `false` when the sharee has
- * no Warpgate account yet — the pre-share case. The grant still succeeds
- * (role assigned to targets); access applies on the sharee's first SSO login.
- * Callers surface a "hasn't signed in yet" notice when `user_known` is false.
+ * Grant result. A user grant must name someone who has signed in to this
+ * Cove server at least once; a never-seen username is refused (422
+ * `user_never_signed_in`) rather than answered here. `user_known` is `false`
+ * when that person has no account at the access gateway right now (it was
+ * deleted, say). The grant still succeeds (role assigned to targets); access
+ * applies when they next sign in. Callers surface a note when it is false.
  *
  * This is the ONE `GrantShareOutcome` that gets `ToSchema`. The
  * server-side `cove_service::ops::share::GrantShareOutcome` is a stale
@@ -7965,7 +7967,7 @@ export type GrantVmAccessErrors = {
      */
     404: ApiError;
     /**
-     * The subject is a team or service-key name (`subject_type` `user`, `subject_id` `team:<slug>` or `svc:<name>`); nothing is granted.
+     * The subject is a team or service-key name (`subject_type` `user`, `subject_id` `team:<slug>` or `svc:<name>`, `validation_failed`), or a username that has never signed in to this Cove server (`user_never_signed_in`); nothing is granted.
      */
     422: ApiError;
     /**

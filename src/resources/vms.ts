@@ -475,10 +475,13 @@ export class VmsResource {
   }
 
   /**
-   * Grant a user or team access to a VM (201). `user_known: false` means the
-   * user has no account yet: the grant still stands and applies at their
-   * first sign-in. Scope: `access:write`; the VM's owner and administrators
-   * only. 400 malformed grant; 404 means absent or not yours.
+   * Grant a user or team access to a VM (201). A user must have signed in to
+   * the server at least once: one it has never seen is refused with 422
+   * `user_never_signed_in` and nothing is granted. `user_known: false` means
+   * the user has no account at the access gateway right now: the grant still
+   * stands and applies when they next sign in. Scope: `access:write`; the
+   * VM's owner and administrators only. 400 malformed grant; 404 means absent
+   * or not yours.
    */
   grantAccess(
     name: string,

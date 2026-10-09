@@ -797,7 +797,9 @@ const { user_known } = await client.vms.grantAccess("web-1", {
   subject_id: "bob",
   role: "collaborator",
 });
-// user_known === false: bob has no account yet; the grant applies at his first sign-in.
+// bob must have signed in once: a username the server has never seen is refused
+// with 422 user_never_signed_in. user_known === false: bob has no account at the
+// access gateway right now; the grant applies when they next sign in.
 await client.vms.revokeAccess("web-1", "user", "bob");
 ```
 

@@ -57,7 +57,7 @@ try {
     // Role "user" can connect and look; "collaborator" can also stop, start, resize and
     // checkpoint the VM.
     const grant = await client.vms.grantAccess(name, { subject_type: "user", subject_id: colleague, role: "collaborator" });
-    console.log(`gave ${colleague} access${grant.user_known ? "" : " (from their first sign-in)"}`);
+    console.log(`gave ${colleague} access${grant.user_known ? "" : " (when they next sign in)"}`);
     console.log(`${colleague} connects with: cove ssh ${name}`);
   }
 } catch (err) {

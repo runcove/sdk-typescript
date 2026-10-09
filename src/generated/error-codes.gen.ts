@@ -27,6 +27,7 @@ export const ERROR_CODES = [
   "team_has_vms",
   "team_not_found",
   "user_not_provisioned",
+  "user_never_signed_in",
   "image_rejected",
   "unknown_image",
   "secret_name_invalid",
