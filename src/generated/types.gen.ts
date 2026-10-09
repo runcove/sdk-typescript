@@ -6285,8 +6285,10 @@ export type ImportProjectSecretsErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -6406,8 +6408,10 @@ export type SetProjectSecretErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -6471,8 +6475,10 @@ export type RotateProjectSecretErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -6954,8 +6960,10 @@ export type ImportTeamSecretsErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -7075,8 +7083,10 @@ export type SetTeamSecretErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -7140,8 +7150,10 @@ export type RotateTeamSecretErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -7290,8 +7302,10 @@ export type ImportUserSecretsErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -7411,8 +7425,10 @@ export type SetUserSecretErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
@@ -7476,8 +7492,10 @@ export type RotateUserSecretErrors = {
     400: ApiError;
     /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     *
+     * This operation is **sudo-gated**: on the daemon socket and the bastion-fronted listener it also answers 401 `sudo_required` when the caller's interactive login is older than the re-auth window, with `reauth_window_secs` on the body and `WWW-Authenticate: cove-reauth realm="sudo"` on the response. The two answer with different bodies, so the schema is a union of both. Bearer-key callers on the external listener are exempt from the gate and never see the second shape.
      */
-    401: ApiError;
+    401: SensitiveOpUnauthorizedResponse;
     /**
      * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `secrets:write`.
      */
