@@ -5168,7 +5168,7 @@ export type ListAuditData = {
     path?: never;
     query?: {
         /**
-         * VM **UUID** (not name).
+         * VM name or id (UUID). A name resolves to a live VM you can see (404 otherwise); a deleted VM is reached by its id. Anything else is 400.
          */
         vm?: string;
         /**
@@ -5176,7 +5176,7 @@ export type ListAuditData = {
          */
         user?: string;
         /**
-         * Exact event kind, e.g. `vm.stopped`.
+         * Exact event kind, e.g. `vm.stopped`. An unknown kind is 400 and the message lists the valid ones.
          */
         kind?: string;
         /**
@@ -5209,6 +5209,8 @@ export type ListAuditData = {
 
 export type ListAuditErrors = {
     /**
+     * Malformed cursor, `vm` that is neither a VM name nor a UUID, or an unknown `kind` (`code` is `validation_failed`, `field` names the parameter).
+     *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
     400: ApiError;
@@ -5221,7 +5223,11 @@ export type ListAuditErrors = {
      */
     403: ScopeDeniedBody;
     /**
-     * Malformed cursor, `vm` that isn't a UUID, or `since` after `until`.
+     * `vm` names no VM, or one you cannot see.
+     */
+    404: ApiError;
+    /**
+     * `since` after `until`.
      */
     422: ApiError;
     /**
