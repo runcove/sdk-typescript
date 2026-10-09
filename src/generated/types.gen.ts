@@ -1237,6 +1237,24 @@ export type ExecRequestDto = {
     login?: boolean | null;
     selector?: null | InjectSelector;
     /**
+     * Text written to the command's stdin (as UTF-8), which is then closed,
+     * so a reader sees end of input. Use it to pipe a script into an
+     * interpreter (`["python3", "-"]`) or data into a command. At most
+     * 1 MiB (1048576 bytes); a larger one is refused with 400 before
+     * anything runs. Not together with `stdin_b64`. Without either, the
+     * command's stdin is empty (`/dev/null`). Needs a guest agent of
+     * protocol 10 or later; an older one refuses the exec. With `login`,
+     * the login shell's profile files share this stdin, so one that reads
+     * input would consume it first.
+     */
+    stdin?: string | null;
+    /**
+     * Like `stdin`, for bytes: standard base64 (with padding), decoded and
+     * written byte for byte. The 1 MiB cap applies to the decoded bytes.
+     * Not together with `stdin`.
+     */
+    stdin_b64?: string | null;
+    /**
      * Seconds the command may run (default 30). Past it the guest kills the
      * command's whole process group and the stream ends with `exit`
      * `{"code": 124, "timed_out": true}`.
@@ -8498,7 +8516,7 @@ export type ExecVmData = {
 
 export type ExecVmErrors = {
     /**
-     * Empty `command`; an empty or NUL-carrying `cwd` or `user`; a malformed `env` (a name that is empty, longer than 256 bytes or holds `=` or NUL, a value with NUL, more than 128 variables); or a `selector` field (removed in API version 5; use `execVmWithSecrets`).
+     * Empty `command`; an empty or NUL-carrying `cwd` or `user`; a malformed `env` (a name that is empty, longer than 256 bytes or holds `=` or NUL, a value with NUL, more than 128 variables); `stdin` and `stdin_b64` both set, `stdin_b64` that is not standard base64, or stdin over 1 MiB; or a `selector` field (removed in API version 5; use `execVmWithSecrets`).
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */

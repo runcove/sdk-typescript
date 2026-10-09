@@ -66,5 +66,6 @@ export type {
   SpotlightStatus,
 } from "./resources/spotlight.js";
 export { SERVICE_KEYS_MIN_API_VERSION } from "./resources/keys.js";
+export { EXEC_STDIN_MIN_API_VERSION } from "./resources/vms.js";
 
 export * from "./types.js";

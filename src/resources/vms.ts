@@ -1,5 +1,5 @@
 import { CoveError, CoveTimeoutError } from "../errors.js";
-import { apiPath, type CoveHttp, type RequestOverrides } from "../http.js";
+import { apiPath, isAbortLike, type CoveHttp, type RequestOverrides } from "../http.js";
 import { parseSSE } from "../sse.js";
 import { VmFilesResource } from "./files.js";
 import type {
@@ -73,6 +73,53 @@ export interface ExecOptions {
    * files apply. Default `false`.
    */
   login?: boolean;
+  /**
+   * Written to the command's stdin, which is then closed. A string is sent as
+   * UTF-8 text (`stdin`), bytes byte for byte (`stdin_b64`). At most
+   * 1 MiB; the server refuses more before anything runs. A guest agent older
+   * than protocol 10 refuses it (the stream's `error` event) rather than run
+   * the command without it. The SDK first reads the server's API version (a
+   * `GET /api/whoami`) and throws a `CoveError`, sending nothing, below
+   * {@link EXEC_STDIN_MIN_API_VERSION}: an older server would drop stdin.
+   */
+  stdin?: string | Uint8Array | ArrayBuffer | null;
+}
+
+/**
+ * First server API version that takes exec stdin (`stdin`, `stdin_b64`). An
+ * older server ignores both fields and would run the command on empty input,
+ * so an exec with stdin first reads the server's version and refuses below
+ * this. Equal to the server's `EXEC_STDIN_API_VERSION`;
+ * `cove/cove-cli/tests/version_drift.rs` checks the two stay equal.
+ */
+export const EXEC_STDIN_MIN_API_VERSION: number = 8;
+
+/**
+ * The request fields for `stdin`: a string as text, any byte view or
+ * `ArrayBuffer` (from any realm) as base64, `undefined` or `null` as unset
+ * (as on every other optional field). Anything else throws, so a command
+ * never runs without the input it was given.
+ */
+function stdinFields(stdin: unknown): { stdin?: string; stdin_b64?: string } {
+  if (stdin === undefined || stdin === null) return {};
+  if (typeof stdin === "string") return { stdin };
+  if (ArrayBuffer.isView(stdin)) {
+    return { stdin_b64: bytesToBase64(new Uint8Array(stdin.buffer, stdin.byteOffset, stdin.byteLength)) };
+  }
+  if (Object.prototype.toString.call(stdin) === "[object ArrayBuffer]") {
+    return { stdin_b64: bytesToBase64(new Uint8Array(stdin as ArrayBuffer)) };
+  }
+  throw new TypeError("exec stdin must be a string, a Uint8Array (or other byte view) or an ArrayBuffer");
+}
+
+/** Standard base64 (with padding) of `bytes`, without Node's `Buffer`. */
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  // In slices, so a 1 MiB input does not overflow the argument limit.
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
 }
 
 export interface ExecWithSecretsOptions {
@@ -571,6 +618,41 @@ export class VmsResource {
    * `execWithSecrets` instead. 503 `feature_disabled` never applies here
    * (that's only for the `selector` path).
    */
+  /**
+   * Refuse an exec with stdin unless the server advertises
+   * {@link EXEC_STDIN_MIN_API_VERSION} or later. The version is read from a
+   * `GET /api/whoami` (in the contract and served on every listener; every
+   * successful answer carries `x-cove-api-version`), from that response rather
+   * than the client-wide last-seen value. A missing, zero or unreadable
+   * version is refused too: nothing shows the server is new enough.
+   */
+  private async requireExecStdin(overrides: RequestOverrides): Promise<void> {
+    let version: number | undefined;
+    try {
+      await this.http.request("GET", apiPath`/api/whoami`, {
+        signal: overrides.signal,
+        timeoutMs: overrides.timeoutMs,
+        onApiVersion: (v) => {
+          version = v;
+        },
+      });
+    } catch (err) {
+      // A deadline or the caller's own abort keeps its identity; only other
+      // failures mean "cannot confirm".
+      if (err instanceof CoveTimeoutError || isAbortLike(err)) throw err;
+      throw new CoveError(
+        `could not read the server's API version (${err instanceof Error ? err.message : String(err)}), ` +
+          `so cannot confirm it supports exec stdin (API ${EXEC_STDIN_MIN_API_VERSION} or later); nothing was sent`,
+      );
+    }
+    if (!version || version < EXEC_STDIN_MIN_API_VERSION) {
+      throw new CoveError(
+        `this server (API ${version ?? "unknown"}) does not support exec stdin; upgrade the server to API ` +
+          `${EXEC_STDIN_MIN_API_VERSION} or later. An older server would run the command without its input; nothing was sent`,
+      );
+    }
+  }
+
   async *exec(
     name: string,
     opts: ExecOptions,
@@ -588,7 +670,10 @@ export class VmsResource {
       user: opts.user,
       // `false` is the default: left out like the others.
       login: opts.login || undefined,
+      ...stdinFields(opts.stdin),
     };
+    // An older server would ignore stdin and run the command on empty input.
+    if (body.stdin !== undefined || body.stdin_b64 !== undefined) await this.requireExecStdin(overrides);
     const response = await this.http.requestSSE("POST", apiPath`/api/vms/${name}/exec`, {
       ...overrides,
       body,

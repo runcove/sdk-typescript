@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   ConflictError,
   CoveClient,
+  EXEC_STDIN_MIN_API_VERSION,
   CoveConnectionError,
   CoveError,
   CoveTimeoutError,
@@ -43,7 +44,7 @@ test("builds URL against baseUrl (trailing slash stripped) and sets standard hea
   assert.equal(calls[0].url, "https://cove.test/api/vms");
   const headers = calls[0].init.headers;
   assert.equal(headers.get("Authorization"), "Bearer cvk_x");
-  assert.equal(headers.get("X-Cove-Api-Version"), "7");
+  assert.equal(headers.get("X-Cove-Api-Version"), "8");
   assert.equal(headers.get("Accept"), "application/json");
 });
 
@@ -221,6 +222,74 @@ test("exec and execCollect send cwd, env, user and login; a plain exec sends non
   const loginFalse = fakeFetch(sse(exit));
   await makeClient(loginFalse.impl).vms.execCollect("web-1", { command: ["ls"], login: false });
   assert.deepEqual(JSON.parse(loginFalse.calls[0].init.body), { command: ["ls"] });
+});
+
+/** A `/api/whoami` answer from a server speaking API `version` (none: no header). */
+const whoamiAt = (version) => () =>
+  new Response(JSON.stringify({ username: "u" }), {
+    status: 200,
+    headers: { "Content-Type": "application/json", ...(version ? { "x-cove-api-version": version } : {}) },
+  });
+
+test("exec sends string stdin as text and bytes as base64", async () => {
+  // Stdin first reads the server's version from /api/whoami (stdin needs 8).
+  const exit = 'event: exit\ndata: {"code":0}\n\n';
+  const text = fakeFetch(whoamiAt("8"), sse(exit));
+  await makeClient(text.impl).vms.execCollect("web-1", { command: ["python3", "-"], stdin: "print(1+1)" });
+  assert.equal(new URL(text.calls[0].url).pathname, "/api/whoami");
+  assert.deepEqual(JSON.parse(text.calls[1].init.body), { command: ["python3", "-"], stdin: "print(1+1)" });
+  // NUL and bytes that are not UTF-8 survive.
+  const bytes = fakeFetch(whoamiAt("8"), sse(exit));
+  for await (const _evt of makeClient(bytes.impl).vms.exec("web-1", {
+    command: ["sha256sum"],
+    stdin: new Uint8Array([0x00, 0xff, 0x80]),
+  }))
+    void _evt;
+  assert.deepEqual(JSON.parse(bytes.calls[1].init.body), { command: ["sha256sum"], stdin_b64: "AP+A" });
+  // Larger than one String.fromCharCode slice: decodes back exactly.
+  const big = new Uint8Array(100_000).map((_, i) => i % 256);
+  const large = fakeFetch(whoamiAt("8"), sse(exit));
+  await makeClient(large.impl).vms.execCollect("web-1", { command: ["wc", "-c"], stdin: big });
+  const sent = Buffer.from(JSON.parse(large.calls[1].init.body).stdin_b64, "base64");
+  assert.deepEqual(new Uint8Array(sent), big);
+  // An ArrayBuffer or another byte view is bytes too.
+  const view = fakeFetch(whoamiAt("8"), sse(exit));
+  await makeClient(view.impl).vms.execCollect("web-1", { command: ["x"], stdin: new Uint8Array([0, 255, 128]).buffer });
+  assert.deepEqual(JSON.parse(view.calls[1].init.body), { command: ["x"], stdin_b64: "AP+A" });
+  // Anything else is refused, not silently dropped.
+  const none = fakeFetch(sse(exit));
+  await assert.rejects(
+    makeClient(none.impl).vms.execCollect("web-1", { command: ["x"], stdin: 42 }),
+    TypeError,
+  );
+  assert.equal(none.calls.length, 0);
+  // `null` is unset, as on every other optional field: no stdin, and no version read.
+  const unset = fakeFetch(sse(exit));
+  await makeClient(unset.impl).vms.execCollect("web-1", { command: ["x"], stdin: null });
+  assert.equal(unset.calls.length, 1);
+  assert.deepEqual(JSON.parse(unset.calls[0].init.body), { command: ["x"] });
+});
+
+test("exec refuses stdin against a server older than API version 8, sending nothing", async () => {
+  // An API 7 server ignores stdin and would run the command on empty input.
+  const exit = 'event: exit\ndata: {"code":0}\n\n';
+  for (const [version, stdin] of [["7", "print(1)"], ["7", new Uint8Array([1])], [undefined, "x"]]) {
+    const old = fakeFetch(whoamiAt(version), sse(exit));
+    await assert.rejects(
+      makeClient(old.impl).vms.execCollect("web-1", { command: ["python3", "-"], stdin }),
+      (err) =>
+        err instanceof CoveError &&
+        /does not support exec stdin; upgrade the server to API 8 or later/.test(err.message) &&
+        (version !== "7" || err.message.includes("this server (API 7) does not support exec stdin")),
+    );
+    assert.equal(old.calls.length, 1, "only the version read was sent");
+    assert.equal(new URL(old.calls[0].url).pathname, "/api/whoami");
+  }
+  // An exec without stdin reads no version and runs against any server.
+  const plain = fakeFetch(sse(exit));
+  await makeClient(plain.impl).vms.execCollect("web-1", { command: ["ls"] });
+  assert.equal(plain.calls.length, 1);
+  assert.equal(EXEC_STDIN_MIN_API_VERSION, 8);
 });
 
 test("execCollect preserves partial chunks without inventing newlines", async () => {
@@ -453,7 +522,7 @@ test("caller headers cannot displace the SDK's own", async () => {
   assert.equal(headers.get("Authorization"), "Bearer cvk_x");
   assert.equal(headers.get("Accept"), "application/json");
   assert.equal(headers.get("Content-Type"), "application/json");
-  assert.equal(headers.get("X-Cove-Api-Version"), "7");
+  assert.equal(headers.get("X-Cove-Api-Version"), "8");
 });
 
 test("a malformed caller header is refused as a CoveError, not a bare TypeError", async () => {
