@@ -1261,6 +1261,11 @@ export type ExecRequestDto = {
  * `timeout_secs` bounds the command as it does on `ExecRequestDto`: past it
  * the guest kills the command's process group and the response is exit 124
  * with `timed_out`. The `setup_tag` wipe still runs afterwards.
+ *
+ * A field this operation does not define is refused with 400
+ * `validation_failed` naming it, not ignored: a caller that sends an option
+ * it lacks (a typo, or an exec option added after this one) would otherwise
+ * get the command run without it.
  */
 export type ExecWithSecretsRequest = {
     /**
@@ -8523,7 +8528,7 @@ export type ExecVmWithSecretsData = {
 
 export type ExecVmWithSecretsErrors = {
     /**
-     * Empty `command`, or `timeout_secs` above 3600.
+     * Empty `command`, `timeout_secs` above 3600, stdin (not supported with secrets), or any other field the request does not define.
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
