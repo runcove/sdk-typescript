@@ -437,7 +437,7 @@ export function tagValue(label: string): string {
  *
  * The binding lives in the VM's tags (`spotlight.base`, `spotlight.dest`, `spotlight.source`),
  * so any client can read it, and `off` works from another process or machine. The CLI's
- * `cove dev spotlight` keeps its binding on the laptop instead: the two do not see each other's.
+ * `cove spotlight` reads and writes the same tags, so each sees the other's binding.
  *
  * Scopes: `tags:read` and `tags:write` (the binding), `files:write` (the upload) and `vms:exec`
  * (the apply).

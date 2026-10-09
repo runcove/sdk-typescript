@@ -399,8 +399,8 @@ await client.spotlight.off("my-box", { tree: "." }); // restores the base commit
   of the first bind, which `off` restores; a switch keeps it),
   `spotlight.dest` and `spotlight.source` (the branch). They are written only
   after a successful apply, show in `cove tag ls <vm>`, and let
-  `off` run from another process. The CLI keeps its binding on the laptop, so
-  the two do not see each other's yet. As with the CLI, `on` with a different
+  `off` run from another process. `cove spotlight` in the CLI reads and
+  writes the same tags, so each sees the other's binding. As with the CLI, `on` with a different
   `dest` re-points the binding but keeps the base, so `off` restores only the
   new `dest`, never the old one.
 - **`off`** needs a checkout that holds the base commit (else `CoveError`:
