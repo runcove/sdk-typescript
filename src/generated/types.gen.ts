@@ -3851,7 +3851,7 @@ export type DeleteAnyCheckpointErrors = {
      */
     404: ApiError;
     /**
-     * A live clone still depends on it, or a restore is in flight.
+     * `checkpoint_conflict`: something still needs the checkpoint, and `message` says what. A VM cloned from it, or from a checkpoint whose disk backs onto it, still reads its disk; a restore from it is in flight; or a hibernated VM wakes from it (wake or delete that VM first).
      */
     409: ApiError;
     /**
@@ -5351,7 +5351,7 @@ export type DeleteCheckpointErrors = {
      */
     404: ApiError;
     /**
-     * The checkpoint has one or more live clones depending on it (`clone_refcount > 0`).
+     * `checkpoint_conflict`: something still needs the checkpoint, and `message` says what. A VM cloned from it, or from a checkpoint whose disk backs onto it, still reads its disk; a restore from it is in flight; or a hibernated VM wakes from it (wake or delete that VM first).
      */
     409: ApiError;
     /**
