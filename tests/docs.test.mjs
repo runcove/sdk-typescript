@@ -61,7 +61,7 @@ test("unit_readme_lists_every_resource_group_on_the_client", () => {
 
 test("unit_readme_install_section_installs_the_tarball_a_server_serves", () => {
   const install = readme.slice(readme.indexOf("## Install"), readme.indexOf("\n## ", readme.indexOf("## Install") + 1));
-  assert.match(install, /npm install "https:\/\/<cove-host>\/public\/sdk\/cove-sdk-<version>\.tgz"/);
+  assert.match(install, /npm install "https:\/\/<cove-web-host>\/public\/sdk\/cove-sdk-<version>\.tgz"/);
   assert.match(install, /\/public\/sdk\/index\.json/);
   assert.doesNotMatch(install, /monorepo/);
 });

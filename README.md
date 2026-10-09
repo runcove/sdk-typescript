@@ -28,7 +28,7 @@ Install the package from the npm registry. The SDK is pre-1.0, so pin an exact v
 npm install --save-exact @runcove/sdk
 ```
 
-To match a Cove server, take `<version>` from `https://<cove-host>/public/sdk/index.json`, then run
+To match a Cove server, take `<version>` from `https://<cove-web-host>/public/sdk/index.json`, then run
 `npm install --save-exact @runcove/sdk@<version>`.
 
 ### Inside a Cove VM, a release less than three days old is held back
@@ -54,8 +54,8 @@ from a mirror that cannot reach the npm registry. `/public/sdk/index.json` lists
 version. Install the tarball by its URL, pinned to that version:
 
 ```sh
-curl -s "https://<cove-host>/public/sdk/index.json"   # find <version>
-npm install "https://<cove-host>/public/sdk/cove-sdk-<version>.tgz"
+curl -s "https://<cove-web-host>/public/sdk/index.json"   # find <version>
+npm install "https://<cove-web-host>/public/sdk/cove-sdk-<version>.tgz"
 ```
 
 The SDK that matches a server is the one that server serves (see "Versions").
@@ -102,7 +102,7 @@ import { CoveClient } from "@runcove/sdk";
 
 // The external bearer listener (`[api] bind`): loopback by default, so plain
 // http is accepted. A `cvk_` key is refused with 401 on the Warpgate-fronted
-// `https://<cove-host>` address, which takes a Warpgate ticket instead.
+// `https://<cove-web-host>` address, which takes a Warpgate ticket instead.
 const client = new CoveClient({
   baseUrl: "http://127.0.0.1:8090",
   token: "cvk_...", // minted via `cove key create` or POST /api/api-keys
@@ -131,7 +131,7 @@ A Cove deployment has two listeners and each accepts one kind of credential: a
 `cvk_` API key goes to the bearer listener (`127.0.0.1:8090` by default, or
 wherever `[api] bind` points), a Warpgate ticket to the Warpgate-fronted main
 address (see "Authentication"). The wrong credential on a listener is a 401. From another
-machine, either forward the port (`ssh -L 8090:127.0.0.1:8090 <cove-host>`, which needs a shell
+machine, either forward the port (`ssh -L 8090:127.0.0.1:8090 <server-host>`, which needs a shell
 account on the host) and keep the loopback URL, or point `baseUrl` at the `https://` address an
 operator has fronted the listener with (see the external API page of the Cove
 docs).
