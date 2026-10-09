@@ -1633,6 +1633,106 @@ export type OffboardConnectedApp = {
 };
 
 /**
+ * What offboarding leaves in place because it is not the person's own, and
+ * an administrator must look at: offboarding reports it and never ends it.
+ */
+export type OffboardLeftBehind = {
+    /**
+     * Why the lists above could not be read, when they could not: they may
+     * then be incomplete. A failed item; run the offboarding again.
+     */
+    error?: string | null;
+    /**
+     * The person is listed in `[auth] admins` (names compared regardless of
+     * case). Offboarding cannot change the config: take them out and
+     * restart Cove.
+     */
+    in_auth_admins: boolean;
+    /**
+     * Team and service keys the person minted (or rotated) that still
+     * work, read from the `keys.issued` and `keys.team_created` audit rows
+     * written in their name. The audit log is the only record of who minted
+     * a key, so a key whose row was pruned from it is not listed. A team or service key belongs to its team or
+     * service, not to the person, so offboarding leaves it active; they
+     * saw its token when they minted it. Rotate or revoke each one. The
+     * service keys bound to the person themselves are not listed here:
+     * offboarding revokes those (`service_keys`).
+     */
+    minted_keys: Array<OffboardMintedKey>;
+    /**
+     * Port invites the person made on VMs that are not theirs, from the
+     * `vm.invite.created` audit rows written in their name, less those a
+     * `vm.invite.revoked` row ended and less those offboarding revoked
+     * itself (its ticket sweep deletes every ticket whose invite row names
+     * the person). Only an invite offboarding could NOT revoke is listed:
+     * its ticket delete failed, the ticket listing failed, or Warpgate was
+     * not asked. An invite is a ticket in the VM owner's name, with no use
+     * limit: the person saw its URL and it works until it expires. The
+     * audit log does not record an invite's expiry, so one listed may
+     * already have expired: `cove share invites <vm>` shows the live ones.
+     */
+    port_invites: Array<OffboardPortInvite>;
+    /**
+     * The live VMs owned by the services bound to the person (`svc:<name>`
+     * of each of their member bindings, ended or not). Offboarding revokes
+     * those services' keys but leaves their VMs as they are, running or
+     * not: reassign, stop or delete them.
+     */
+    service_vms: Array<OffboardServiceVm>;
+    /**
+     * The active webhook subscriptions owned by the services bound to the
+     * person. They still deliver to the endpoint they were created with:
+     * disable or delete them.
+     */
+    service_webhooks: Array<OffboardServiceWebhook>;
+};
+
+/**
+ * A team or service key the person minted that is still active.
+ */
+export type OffboardMintedKey = {
+    /**
+     * When it expires (RFC 3339), if it does.
+     */
+    expires_at?: string | null;
+    id: string;
+    /**
+     * The key's label.
+     */
+    name: string;
+    /**
+     * The key's visible prefix (`cvk_…`).
+     */
+    prefix: string;
+    /**
+     * Whose key it is: `team:<team>` or `svc:<service>`.
+     */
+    subject: string;
+};
+
+/**
+ * A port invite the person made on a VM that is not theirs.
+ */
+export type OffboardPortInvite = {
+    /**
+     * When the person made it (RFC 3339 / SQLite timestamp as recorded).
+     */
+    created_at: string;
+    /**
+     * The invite's id (the Warpgate ticket id).
+     */
+    id: string;
+    /**
+     * The proxied port the invite opens.
+     */
+    port: number;
+    /**
+     * The VM's name.
+     */
+    vm: string;
+};
+
+/**
  * The outcome of deleting one of the user's own secrets.
  */
 export type OffboardSecret = {
@@ -1659,6 +1759,40 @@ export type OffboardServiceKey = {
      * The service name (`svc:<name>` owns its VMs).
      */
     name: string;
+};
+
+/**
+ * A live VM owned by a service bound to the person.
+ */
+export type OffboardServiceVm = {
+    /**
+     * The service name (`svc:<name>` owns the VM).
+     */
+    service: string;
+    /**
+     * The VM's name.
+     */
+    vm: string;
+};
+
+/**
+ * An active webhook subscription owned by a service bound to the person.
+ */
+export type OffboardServiceWebhook = {
+    id: string;
+    /**
+     * `vm`, `user` or `server`.
+     */
+    scope: string;
+    /**
+     * The service name (`svc:<name>` owns the subscription).
+     */
+    service: string;
+    /**
+     * The VM's name (its id when the VM is gone), for a `vm`-scope
+     * subscription.
+     */
+    vm?: string | null;
 };
 
 /**
@@ -1797,6 +1931,7 @@ export type OffboardUserReport = {
      * True when nothing was changed and this is only what would happen.
      */
     dry_run: boolean;
+    left_behind?: null | OffboardLeftBehind;
     /**
      * Set when the credential sweep that runs again after the Warpgate
      * sessions are closed failed: anything a still-open session created in
