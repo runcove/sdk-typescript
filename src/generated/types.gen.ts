@@ -586,9 +586,26 @@ export type Checkpoint = {
      */
     id: string;
     /**
+     * When the checkpoint's source VM was deleted (RFC 3339, UTC). Present
+     * only on an orphan, a checkpoint that outlived its VM (`vm_id` is then
+     * empty). Absent too on an orphan from a release before this field,
+     * until the server's orphan-checkpoint reclaim pass first sees it.
+     */
+    orphaned_at?: string | null;
+    /**
      * Service-owned: who created the checkpoint.
      */
     owner_username: string;
+    /**
+     * When the server will delete this orphan on its own (RFC 3339, UTC):
+     * `orphaned_at` plus the server's `[service]
+     * orphan_checkpoint_reclaim_days`. Absent for a checkpoint whose VM
+     * exists, for an orphan a clone still depends on (it is kept while the
+     * clone exists), and for every checkpoint when the server does not
+     * reclaim orphans (the setting is `0`). A time in the past means the
+     * next reclaim pass deletes it.
+     */
+    reclaim_at?: string | null;
     /**
      * On-disk total size in bytes; `None` until the reconciler measures.
      */
