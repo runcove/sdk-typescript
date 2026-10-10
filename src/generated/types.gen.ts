@@ -743,7 +743,9 @@ export type CloneRequest = {
      * Tags for the clone, replacing the source's. Omitted, the clone gets
      * the source's tags; an empty object gives it none. Each entry obeys
      * the same rules as setting a tag, and at most 50 are allowed; a bad
-     * one is refused with 400 before anything is cloned.
+     * one is refused with 400 before anything is cloned. A non-empty set
+     * needs `tags:write` as well as `vms:write` (403 `scope_denied`
+     * without it).
      */
     tags?: {
         [key: string]: string;
@@ -915,11 +917,17 @@ export type CreateVmRequest = {
      */
     initial_secrets?: Array<SecretSpec>;
     /**
-     * Tags to set immediately after VM creation. A JSON object
+     * Tags the new VM gets, on it by the time it is `running`. A JSON object
      * of key to value, the same shape as `VmDetail.tags` (a list of
-     * `[key, value]` pairs until API version 5). Each entry is validated
-     * server-side via the public `validate_user_tag_key` /
-     * `validate_tag_value` validators. Absent means no tags.
+     * `[key, value]` pairs until API version 5). Each entry must pass the
+     * rules `PUT /api/vms/{name}/tags/{key}` applies, checked before anything
+     * is reserved: a bad entry is refused with 400 (a key starting `cove:`,
+     * which only Cove sets, with `tag_reserved_prefix`), and more than 50
+     * tags with 409 `too_many_tags`. A non-empty set needs `tags:write` as
+     * well as `vms:write`: a key without it is refused with 403
+     * `scope_denied`. A VM an agent creates (through hosted MCP, or with a
+     * connected app's token) also gets `cove:created-by: agent`, which
+     * counts toward the 50. Absent means no tags.
      */
     initial_tags?: {
         [key: string]: string;
@@ -3253,7 +3261,7 @@ export type VmCountResult = {
 };
 
 /**
- * The 409 body of `createVm`, which refuses for two different reasons and
+ * The 409 body of `createVm`, which refuses for three different reasons and
  * answers with a different shape for each (same treatment as
  * [`VmConflictResponse`]).
  *
@@ -3263,13 +3271,15 @@ export type VmCountResult = {
  * - A **capacity or quota denial** returns a `DenyReason`, carrying the
  * numbers behind the refusal so a caller can retry smaller or wait.
  *
- * Both branches key their machine-readable discriminant on `code`, from two
- * different closed catalogues: `VmNameTakenBody.code` is
- * [`cove_types::ErrorCode`] (`vm_name_taken`), `DenyReason.code` is a
- * capacity/quota reason (`ram_headroom_exceeded`, …). There is no third
- * shape — a create conflict is never the plain `ApiError` envelope.
+ * - **Too many tags** in `initial_tags` returns the ordinary `ApiError`
+ * envelope. `code` is `too_many_tags`.
+ *
+ * All three key their machine-readable discriminant on `code`, from two
+ * different closed catalogues: `VmNameTakenBody.code` and `ApiError.code`
+ * are [`cove_types::ErrorCode`] (`vm_name_taken`, `too_many_tags`),
+ * `DenyReason.code` is a capacity/quota reason (`ram_headroom_exceeded`, …).
  */
-export type VmCreateConflictResponse = VmNameTakenBody | DenyReason;
+export type VmCreateConflictResponse = VmNameTakenBody | DenyReason | ApiError;
 
 /**
  * GET /vms/{name} response body.
@@ -7692,7 +7702,7 @@ export type CreateVmData = {
 
 export type CreateVmErrors = {
     /**
-     * Malformed request body, or a refused name: one outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen) or held by a bastion target this server may not take over. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a malformed body answers the `ApiError` envelope with `validation_failed`.
+     * Malformed request body, a refused name: one outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen) or held by a bastion target this server may not take over, or a bad entry in `initial_tags`. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a malformed body answers the `ApiError` envelope with `validation_failed`, and a bad tag answers it with the tag code (`tag_invalid_key`, `tag_reserved_prefix` for a key starting `cove:`, which only Cove sets, `tag_invalid_value`). Nothing is reserved.
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
@@ -7702,11 +7712,11 @@ export type CreateVmErrors = {
      */
     401: ApiError;
     /**
-     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the body sets `nested_virt` and the caller is not in the server's `[auth] admins`, or is an admin whose API key lacks `admin:vms:nested-virt`. The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
+     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the body sets `nested_virt` and the caller is not in the server's `[auth] admins`, or is an admin whose API key lacks `admin:vms:nested-virt`, and `scope_denied` with `required: "tags:write"` when `initial_tags` is not empty and the key lacks `tags:write` (nothing is reserved). The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
      */
     403: ApiError;
     /**
-     * The requested name is already taken (or still in post-delete cooldown), or admission/quota refused the create. The two answer with different bodies, so the schema is a union of both: the name conflict returns `vm_name_taken` with `name` and an optional `retry_after_secs`, the denial returns a `DenyReason`. Neither is an `ApiError`.
+     * The requested name is already taken (or still in post-delete cooldown), admission/quota refused the create, or `initial_tags` has more than 50 entries (49 on a VM an agent creates, which Cove tags `cove:created-by: agent`). These answer with different bodies, so the schema is a union of them: the name conflict returns `vm_name_taken` with `name` and an optional `retry_after_secs`, the denial returns a `DenyReason`, and too many tags returns the `ApiError` envelope with `too_many_tags`.
      */
     409: VmCreateConflictResponse;
     /**
@@ -10701,7 +10711,7 @@ export type CloneVmErrors = {
      */
     401: ApiError;
     /**
-     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the source VM was created with nested virtualisation and the caller, who can see it, is not in the server's `[auth] admins`, or is an admin whose API key lacks `admin:vms:nested-virt`. A caller who cannot see the source gets the 404 instead. The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
+     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the source VM was created with nested virtualisation and the caller, who can see it, is not in the server's `[auth] admins`, or is an admin whose API key lacks `admin:vms:nested-virt`. A caller who cannot see the source gets the 404 instead. It answers `scope_denied` with `required: "tags:write"` when `tags` is not empty and the key lacks `tags:write`, before anything is reserved. The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
      */
     403: ApiError;
     /**
@@ -10709,7 +10719,7 @@ export type CloneVmErrors = {
      */
     404: ApiError;
     /**
-     * `new_vm_name` is taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`). These answer with different bodies, so the schema is a union of them: a taken name answers `vm_name_taken` with the same body as `createVm` — `name`, plus `retry_after_secs` when the name belonged to a VM deleted too recently and is still in its post-delete cooldown; a state conflict returns the `ApiError` envelope; a denial returns a `DenyReason` carrying the numbers behind the refusal.
+     * `new_vm_name` is taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`), or an agent clones a VM that already has 50 tags (`too_many_tags`; the copy's `cove:created-by: agent` tag would be the 51st). These answer with different bodies, so the schema is a union of them: a taken name answers `vm_name_taken` with the same body as `createVm` — `name`, plus `retry_after_secs` when the name belonged to a VM deleted too recently and is still in its post-delete cooldown; a state conflict returns the `ApiError` envelope; a denial returns a `DenyReason` carrying the numbers behind the refusal.
      */
     409: VmCloneConflictResponse;
     /**
