@@ -130,6 +130,7 @@ export type {
   RemoveMemberOutcome,
   RenameBody,
   ReplayWebhookDeliveryResponse,
+  RequestRefusalEntry,
   ReservationKind,
   ReservationRef,
   ResizeRequest,

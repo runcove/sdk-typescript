@@ -186,6 +186,14 @@ export type AdminHostStateResponse = {
      */
     orphaned_checkpoint_count: number;
     /**
+     * Requests the external listener refused this process, per (route
+     * group, reason): an address its `allow`/`deny` lists refuse, or a
+     * spent per-address or per-credential budget. All twelve rows, zeros
+     * included. Not `required` in the schema: a daemon that predates it
+     * omits it.
+     */
+    request_refusals?: Array<RequestRefusalEntry>;
+    /**
      * Per-image snapshot disk usage (version-dir count + bytes).
      */
     snapshot_images: Array<SnapshotImageUsage>;
@@ -1167,7 +1175,7 @@ export type EnableUserResponse = {
  * `snake_case`, `<subject>_<condition>`: the subject is
  * the thing that went wrong, not the endpoint.
  */
-export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'user_never_signed_in' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'user_disabled' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full';
+export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_found' | 'unavailable' | 'rate_limited' | 'database_unavailable' | 'invalid_config' | 'CLI_TOO_OLD' | 'vm_not_found' | 'vm_name_taken' | 'invalid_vm_name' | 'capacity_exhausted' | 'invalid_state_transition' | 'vm_access_denied' | 'admin_required' | 'too_many_tags' | 'tag_reserved_prefix' | 'tag_invalid_key' | 'tag_invalid_value' | 'tag_invalid' | 'team_has_vms' | 'team_not_found' | 'user_not_provisioned' | 'user_never_signed_in' | 'image_rejected' | 'unknown_image' | 'secret_name_invalid' | 'checkpoint_conflict' | 'clone_source_not_found' | 'wake_target_not_found' | 'disk_rollback_not_named' | 'feature_disabled' | 'port_not_allowed' | 'port_not_primary' | 'primary_port_not_removable' | 'identity_missing' | 'identity_invalid' | 'credential_missing' | 'credential_invalid' | 'credential_expired' | 'scope_denied' | 'sudo_required' | 'ticket_required' | 'user_disabled' | 'platform_not_available' | 'cli_distribution_not_configured' | 'webhook_not_found' | 'webhook_access_denied' | 'webhook_subscription_disabled' | 'storage_error' | 'crypto_error' | 'guest_agent_too_old' | 'file_not_found' | 'file_not_regular' | 'file_path_denied' | 'file_too_large' | 'guest_disk_full' | 'client_address_denied';
 
 /**
  * Data of the terminal `exit` event of `POST /vms/{name}/exec`.
@@ -2388,6 +2396,27 @@ export type ReplayWebhookDeliveryResponse = {
      * its own `delivery_id`.
      */
     new_delivery_id: string;
+};
+
+/**
+ * One row of host-state `request_refusals`: how many requests the external
+ * listener refused on one route group for one reason, this daemon process.
+ */
+export type RequestRefusalEntry = {
+    /**
+     * `address_denied` (403, the group's `allow`/`deny` list),
+     * `rate_limited_address` (429, the address's budget) or
+     * `rate_limited_credential` (429, the credential's budget).
+     */
+    reason: string;
+    /**
+     * `mcp`, `oauth_token`, `oauth` or `api`.
+     */
+    route_group: string;
+    /**
+     * Refusals this process.
+     */
+    total: number;
 };
 
 /**
@@ -3749,7 +3778,7 @@ export type UpdateAutoPauseTimeoutsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -3811,7 +3840,7 @@ export type ListAnyCheckpointsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -3863,7 +3892,7 @@ export type DeleteAnyCheckpointErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -3911,7 +3940,7 @@ export type DrainHostErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -3950,7 +3979,7 @@ export type GetHostStateErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -3994,7 +4023,7 @@ export type ListProjectMembersErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4051,7 +4080,7 @@ export type CreateProjectMemberErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4099,7 +4128,7 @@ export type DeleteProjectMemberErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4138,7 +4167,7 @@ export type GetQuotaDefaultsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4182,7 +4211,7 @@ export type DeleteUserQuotaOverrideErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4226,7 +4255,7 @@ export type GetUserQuotaOverrideErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4281,7 +4310,7 @@ export type UpdateUserQuotaOverrideErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4325,7 +4354,7 @@ export type CreateQuotaBypassErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4369,7 +4398,7 @@ export type DeleteTeamQuotaOverrideErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4413,7 +4442,7 @@ export type GetTeamQuotaOverrideErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4464,7 +4493,7 @@ export type UpdateTeamQuotaOverrideErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4510,7 +4539,7 @@ export type UpdateVmAgentsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4549,7 +4578,7 @@ export type ListAllUsersErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4597,7 +4626,7 @@ export type GetUserErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4645,7 +4674,7 @@ export type EnableUserErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4706,7 +4735,7 @@ export type OffboardUserErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4750,7 +4779,7 @@ export type RevokeUserSessionsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -4812,7 +4841,7 @@ export type ListAllVmsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4862,7 +4891,7 @@ export type BulkDeleteVmsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4912,7 +4941,7 @@ export type BulkStopVmsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -4972,7 +5001,7 @@ export type ListApiKeysErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5026,7 +5055,7 @@ export type CreateApiKeyErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5069,7 +5098,7 @@ export type RevokeApiKeyByTokenErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5115,7 +5144,7 @@ export type RevokeApiKeyErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5167,7 +5196,7 @@ export type RotateApiKeyErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5257,7 +5286,7 @@ export type ListAuditErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5311,7 +5340,7 @@ export type ListAllCheckpointsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5363,7 +5392,7 @@ export type DeleteCheckpointErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5411,7 +5440,7 @@ export type GetCheckpointErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5442,7 +5471,7 @@ export type HealthErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5481,7 +5510,7 @@ export type GetHostCapacityErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5520,7 +5549,7 @@ export type GetHostCapacityCheckErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5571,7 +5600,7 @@ export type CreateReservationErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5623,7 +5652,7 @@ export type DeleteReservationErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5685,7 +5714,7 @@ export type GetHostTelemetryErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5724,7 +5753,7 @@ export type ListImagesErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5763,7 +5792,7 @@ export type StreamLifecycleEventsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5835,7 +5864,7 @@ export type GetMeErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5870,7 +5899,7 @@ export type GetCliStatusErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5905,7 +5934,7 @@ export type ListMyConnectedAppsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -5980,7 +6009,7 @@ export type ListSshKeysErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6142,7 +6171,7 @@ export type ListSessionsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6213,7 +6242,7 @@ export type GetOpenapiDocumentErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6263,7 +6292,7 @@ export type ListProjectSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -6324,7 +6353,7 @@ export type ImportProjectSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -6380,7 +6409,7 @@ export type UnsetProjectSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -6447,7 +6476,7 @@ export type SetProjectSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -6514,7 +6543,7 @@ export type RotateProjectSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -6557,7 +6586,7 @@ export type GetSystemStatusErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6596,7 +6625,7 @@ export type ListAllTagsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6635,7 +6664,7 @@ export type ListTeamsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6681,7 +6710,7 @@ export type CreateTeamErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6733,7 +6762,7 @@ export type DeleteTeamErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6781,7 +6810,7 @@ export type ListTeamMembersErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6840,7 +6869,7 @@ export type CreateTeamMemberErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6890,7 +6919,7 @@ export type DeleteTeamMemberErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -6938,7 +6967,7 @@ export type ListTeamSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -6999,7 +7028,7 @@ export type ImportTeamSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7055,7 +7084,7 @@ export type UnsetTeamSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7122,7 +7151,7 @@ export type SetTeamSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7189,7 +7218,7 @@ export type RotateTeamSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7232,7 +7261,7 @@ export type ListUsersErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7280,7 +7309,7 @@ export type ListUserSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7341,7 +7370,7 @@ export type ImportUserSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7397,7 +7426,7 @@ export type UnsetUserSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7464,7 +7493,7 @@ export type SetUserSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7531,7 +7560,7 @@ export type RotateUserSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7566,7 +7595,7 @@ export type VersionErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7628,7 +7657,7 @@ export type ListVmsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7684,7 +7713,7 @@ export type CreateVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -7727,7 +7756,7 @@ export type StreamAllVmEventsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7766,7 +7795,7 @@ export type ListSharedVmsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7816,7 +7845,7 @@ export type DeleteVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7868,7 +7897,7 @@ export type GetVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7916,7 +7945,7 @@ export type ListVmAccessErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -7977,7 +8006,7 @@ export type GrantVmAccessErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8037,7 +8066,7 @@ export type RevokeVmAccessErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8089,7 +8118,7 @@ export type SetVmAutoPauseErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8152,7 +8181,7 @@ export type ListVmCheckpointsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8211,7 +8240,7 @@ export type CreateCheckpointErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8263,7 +8292,7 @@ export type ConnectVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8320,7 +8349,7 @@ export type GetVmConsoleErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8377,7 +8406,7 @@ export type StreamVmConsoleErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8425,7 +8454,7 @@ export type StreamVmEventsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8488,7 +8517,7 @@ export type ListVmEventsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8553,7 +8582,7 @@ export type ExecVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8607,7 +8636,7 @@ export type ExecVmWithSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -8659,7 +8688,7 @@ export type GetVmExpiryErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8715,7 +8744,7 @@ export type SetVmExpiryErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -8784,7 +8813,7 @@ export type DownloadVmFileErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -8857,7 +8886,7 @@ export type StatVmFileErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -8939,7 +8968,7 @@ export type UploadVmFileErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -8999,7 +9028,7 @@ export type HibernateVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9047,7 +9076,7 @@ export type GetIdleStateErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9095,7 +9124,7 @@ export type ListVmInvitesErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9147,7 +9176,7 @@ export type RevokeVmInviteErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9199,7 +9228,7 @@ export type PauseVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9245,7 +9274,7 @@ export type ListVmPortsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9304,7 +9333,7 @@ export type CreateVmPortErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9368,7 +9397,7 @@ export type DeleteVmPortErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9437,7 +9466,7 @@ export type CreateVmPortInviteErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9500,7 +9529,7 @@ export type SetVmPortPublicErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9606,7 +9635,7 @@ export type ListVmProcessesErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9666,7 +9695,7 @@ export type ResizeVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9718,7 +9747,7 @@ export type ResumeVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -9764,7 +9793,7 @@ export type ListVmSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -9825,7 +9854,7 @@ export type ImportVmSecretsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -9881,7 +9910,7 @@ export type DeleteVmSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -9948,7 +9977,7 @@ export type SetVmSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -10015,7 +10044,7 @@ export type RotateVmSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -10071,7 +10100,7 @@ export type StartVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10117,7 +10146,7 @@ export type GetVmStatsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10169,7 +10198,7 @@ export type StopVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10215,7 +10244,7 @@ export type ListVmTagsErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10271,7 +10300,7 @@ export type DeleteVmTagErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10340,7 +10369,7 @@ export type SetVmTagErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10392,7 +10421,7 @@ export type UnsetVmTeamErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10448,7 +10477,7 @@ export type SetVmTeamErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10519,7 +10548,7 @@ export type GetVmTelemetryErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10567,7 +10596,7 @@ export type GetVmUrlErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10625,7 +10654,7 @@ export type WakeVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10687,7 +10716,7 @@ export type CloneVmErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10739,7 +10768,7 @@ export type ListWebhooksErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10792,7 +10821,7 @@ export type CreateWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -10848,7 +10877,7 @@ export type DeleteWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -10904,7 +10933,7 @@ export type GetWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -10962,7 +10991,7 @@ export type UpdateWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -11031,7 +11060,7 @@ export type ListWebhookDeliveriesErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -11087,7 +11116,7 @@ export type GetWebhookDeliveryErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };
@@ -11143,7 +11172,7 @@ export type ReplayWebhookDeliveryErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -11199,7 +11228,7 @@ export type DisableWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -11255,7 +11284,7 @@ export type EnableWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -11313,7 +11342,7 @@ export type RotateWebhookSecretErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -11369,7 +11398,7 @@ export type TestWebhookErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
     /**
@@ -11408,7 +11437,7 @@ export type WhoamiErrors = {
      */
     426: CliTooOldBody;
     /**
-     * Too many requests from this source address. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget, set by `[api] rate_limit_per_ip`; every caller behind one NAT or proxy shares it. The body is the `ApiError` envelope with `code` `rate_limited`; wait the `Retry-After` seconds, then resend.
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
 };

@@ -61,4 +61,5 @@ export const ERROR_CODES = [
   "file_path_denied",
   "file_too_large",
   "guest_disk_full",
+  "client_address_denied",
 ] as const satisfies readonly ErrorCode[];
