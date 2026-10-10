@@ -946,7 +946,7 @@ COVE_URL=http://127.0.0.1:8090 COVE_TOKEN=cvk_... node examples/ci-runner.ts   #
 
 The Cove MCP server is built into the `cove` binary: use `cove mcp serve` (local
 mode, CLI login or API key) or the hosted `/mcp` endpoint on a Cove server
-(API keys or claude.ai sign-in). The Cove docs' "Using Cove as an agent" page describes
+(sign-in as a connected app; an API key on a server without MCP sign-in, or where its operator allows keys). The Cove docs' "Using Cove as an agent" page describes
 the local server.
 
 ## License
