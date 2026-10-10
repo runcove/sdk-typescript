@@ -292,6 +292,36 @@ test("exec refuses stdin against a server older than API version 8, sending noth
   assert.equal(EXEC_STDIN_MIN_API_VERSION, 8);
 });
 
+test("exec keeps carriage returns byte-exact when the server JSON-encodes its chunks", async () => {
+  // The SDK opts in, and the server answers with each chunk as a JSON string and says so.
+  const body =
+    'event: stdout\ndata: "one\\r\\ntwo\\r\\n"\n\n' +
+    'event: stdout\ndata: "50%\\r100%\\n"\n\n' +
+    'event: stderr\ndata: "warn\\r\\n"\n\n' +
+    'event: exit\ndata: {"code":0,"timed_out":false}\n\n';
+  const encoded = () =>
+    new Response(body, {
+      status: 200,
+      headers: { "Content-Type": "text/event-stream", "x-cove-exec-encoding": "json" },
+    });
+  const { calls, impl } = fakeFetch(encoded);
+  const result = await makeClient(impl).vms.execCollect("web-1", { command: ["ls"] });
+  assert.deepEqual(result, {
+    stdout: "one\r\ntwo\r\n50%\r100%\n",
+    stderr: "warn\r\n",
+    exitCode: 0,
+    timedOut: false,
+  });
+  // The opt-in is a query parameter: a request header a released server's CORS
+  // preflight does not list would stop exec in a browser.
+  assert.equal(new URL(String(calls[0].url)).searchParams.get("encoding"), "json");
+  assert.equal(calls[0].init.headers.has("x-cove-exec-encoding"), false);
+  // Without the header (an older server) the chunk is raw: quotes stay quotes.
+  const raw = fakeFetch(sse('event: stdout\ndata: "quoted"\n\nevent: exit\ndata: {"code":0}\n\n'));
+  const rawResult = await makeClient(raw.impl).vms.execCollect("web-1", { command: ["ls"] });
+  assert.equal(rawResult.stdout, '"quoted"');
+});
+
 test("execCollect preserves partial chunks without inventing newlines", async () => {
   const { impl } = fakeFetch(
     sse('event: stdout\ndata: no-newline\n\nevent: exit\ndata: {"code":0}\n\n'),

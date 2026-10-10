@@ -1,6 +1,6 @@
 import { CoveError, CoveTimeoutError } from "../errors.js";
 import { apiPath, isAbortLike, type CoveHttp, type RequestOverrides } from "../http.js";
-import { parseSSE } from "../sse.js";
+import { EXEC_ENCODING_QUERY, execChunkDecoder, parseSSE } from "../sse.js";
 import { VmFilesResource } from "./files.js";
 import type {
   AddPortRequest,
@@ -611,8 +611,9 @@ export class VmsResource {
   /**
    * Execute a command in the guest, streaming output. Scope: `vms:exec`.
    * Returns an async generator of `ExecEvent`s parsed from the `200
-   * text/event-stream` response — `stdout`/`stderr` carry raw output
-   * chunks (newlines included; concatenate verbatim); the stream ends
+   * text/event-stream` response — `stdout`/`stderr` carry output chunks
+   * (newlines and carriage returns included; concatenate verbatim) — asked
+   * for JSON-encoded and decoded here when the server confirms it; the stream ends
    * after exactly one of `exit`/`error`/`paused`.
    * At `opts.timeoutSecs` (30 s when omitted) the guest SIGKILLs the command and
    * everything that stayed in its process group, and the stream ends with `exit`
@@ -677,18 +678,24 @@ export class VmsResource {
     };
     // An older server would ignore stdin and run the command on empty input.
     if (body.stdin !== undefined || body.stdin_b64 !== undefined) await this.requireExecStdin(overrides);
+    // Asks for JSON-string chunks, which carry a carriage return intact. A
+    // query parameter, not a header: a released server ignores a parameter it
+    // does not know and sends raw chunks, while a request header it does not
+    // allow fails the CORS preflight and stops exec in a browser altogether.
     const response = await this.http.requestSSE("POST", apiPath`/api/vms/${name}/exec`, {
       ...overrides,
+      query: { [EXEC_ENCODING_QUERY]: "json" },
       body,
     });
     if (!response.body) return;
+    const chunk = execChunkDecoder(response.headers);
     for await (const evt of parseSSE(response.body)) {
       switch (evt.event) {
         case "stdout":
-          yield { kind: "stdout", data: evt.data };
+          yield { kind: "stdout", data: chunk(evt.data) };
           break;
         case "stderr":
-          yield { kind: "stderr", data: evt.data };
+          yield { kind: "stderr", data: chunk(evt.data) };
           break;
         case "exit": {
           const parsed = parseTerminalEvent<{ code: number; timed_out?: boolean }>("exit", evt.data);

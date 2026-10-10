@@ -22,6 +22,40 @@ export interface ServerSentEvent {
   data: string;
 }
 
+/**
+ * The header that confirms JSON-string `stdout` / `stderr` chunks on an exec
+ * response. SSE ends a data line at a carriage return, so the SDK asks for the
+ * chunks JSON-encoded ({@link EXEC_ENCODING_QUERY}) to carry `\r` intact; an
+ * older server ignores the request and sends raw chunks without this header.
+ */
+export const EXEC_ENCODING_HEADER = "x-cove-exec-encoding";
+
+/**
+ * The query parameter that asks an exec stream for JSON-string chunks
+ * (`?encoding=json`). Not a request header: a released server's CORS preflight
+ * refuses a header it does not list, which would stop exec in a browser, while
+ * it ignores a query parameter it does not know.
+ */
+export const EXEC_ENCODING_QUERY = "encoding";
+
+/**
+ * How to read an exec response's `stdout` / `stderr` data: JSON-decoded when
+ * the response carries `x-cove-exec-encoding: json`, as it came otherwise.
+ * Data that is not a JSON string is kept as it came.
+ */
+export function execChunkDecoder(headers: Headers): (data: string) => string {
+  const encoding = headers.get(EXEC_ENCODING_HEADER)?.trim().toLowerCase();
+  if (encoding !== "json") return (data) => data;
+  return (data) => {
+    try {
+      const chunk: unknown = JSON.parse(data);
+      return typeof chunk === "string" ? chunk : data;
+    } catch {
+      return data;
+    }
+  };
+}
+
 export async function* parseSSE(
   body: ReadableStream<Uint8Array>,
 ): AsyncGenerator<ServerSentEvent> {

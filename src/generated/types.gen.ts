@@ -8506,13 +8506,24 @@ export type ListVmEventsResponse = ListVmEventsResponses[keyof ListVmEventsRespo
 
 export type ExecVmData = {
     body: ExecRequestDto;
+    headers?: {
+        /**
+         * The same opt-in as the `encoding` query parameter, as a header: `json` asks for JSON-string chunks. Prefer the query parameter, which a browser sends without a CORS preflight entry.
+         */
+        'x-cove-exec-encoding'?: string | null;
+    };
     path: {
         /**
          * VM name.
          */
         name: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * `json` asks for each `stdout` / `stderr` chunk as a JSON string, which carries a carriage return intact. Any other value, or none, gets the raw chunks. A server that predates the parameter ignores it.
+         */
+        encoding?: string;
+    };
     url: '/api/vms/{name}/exec';
 };
 
