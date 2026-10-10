@@ -3343,8 +3343,12 @@ export type VmDetail = {
     memory_max_mb?: number;
     /**
      * Memory in MiB the VM boots with on a cold start. Not what the VM has
-     * now: after a resize, or for a clone of a VM that was resized,
-     * `current_memory_mb` is the memory the guest holds.
+     * now: after a resize, for a clone of a VM that was resized, or when the
+     * VM was made ready ahead of time and resized up to the size asked for
+     * as it was handed over (a create asking 4096 can show `memory_mb` 2048
+     * and `current_memory_mb` 4096), `current_memory_mb` is the memory the
+     * guest holds. A stop and a start boots at `memory_mb` and then grows
+     * the VM back to `current_memory_mb`.
      */
     memory_mb: number;
     /**
@@ -3359,8 +3363,11 @@ export type VmDetail = {
     ttl_policy?: TtlPolicy;
     updated_at: string;
     /**
-     * vCPUs the VM boots with on a cold start. The VM can be running with
-     * more after a resize: `current_vcpus` is what it has now.
+     * vCPUs the VM boots with on a cold start. Not what it has now: after a
+     * resize, or when the VM was made ready ahead of time and resized up to
+     * the size asked for as it was handed over, `current_vcpus` is what it
+     * has. A stop and a start boots at `vcpus` and then grows the VM back to
+     * `current_vcpus`.
      */
     vcpus: number;
     /**
