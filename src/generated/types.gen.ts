@@ -2313,6 +2313,13 @@ export type ProxyUrlInfo = {
     ports: Array<ProxyPortInfo>;
     ssh_url: string;
     vm_name: string;
+    /**
+     * The address Cove's web app is served on, as the server is configured
+     * (`[daemon.cli_releases] public_url`, else `https://<api_external_host>`):
+     * the VM's page is `<web_url>/vms/<vm_name>`. Absent when neither is
+     * configured.
+     */
+    web_url?: string | null;
 };
 
 export type PutPrimaryPortBody = {
