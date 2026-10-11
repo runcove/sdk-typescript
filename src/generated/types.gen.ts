@@ -954,7 +954,7 @@ export type CreateVmRequest = {
     nested_virt?: boolean;
     /**
      * Per-VM HTTP proxy ports to register with Warpgate after VM creation.
-     * Each port must appear in `[proxy].allowed_ports` in `cove.toml`.
+     * Each port must appear in `[service.proxy].allowed_ports` in `cove.toml`.
      * Empty by default — older clients omit the field and the server treats
      * it as no proxy ports requested.
      */

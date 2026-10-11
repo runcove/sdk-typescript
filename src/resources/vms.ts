@@ -291,11 +291,13 @@ export class VmsResource {
    * current disk, or pass the checkpoint's id to roll back). 409
    * `invalid_state_transition` on any other state the checkpoint cannot wake.
    *
-   * This used to live at `client.checkpoints.restore()`, which read like
-   * "roll a VM back to a checkpoint" and was not that: it posts to the
-   * un-hibernate route, and `checkpoint_id` only selects *which* checkpoint
-   * to wake from. There is no checkpoint-rollback operation in Cove today —
-   * `restore` is reserved for that, if it is ever built.
+   * Waking a `stopped` VM with a disk-only checkpoint's id is the in-place
+   * disk rollback: there is no separate rollback call. Waking discards the
+   * VM's current disk and every write since the checkpoint is lost, so
+   * checkpoint first to keep it. Naming an older checkpoint on a `hibernated`
+   * VM rolls back its disk and memory too. It used to live at
+   * `client.checkpoints.restore()`; `restore` stays reserved for a future
+   * dedicated operation.
    */
   wake(
     name: string,
