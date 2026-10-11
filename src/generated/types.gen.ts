@@ -1717,7 +1717,7 @@ export type OffboardLeftBehind = {
      * The live VMs owned by the services bound to the person (`svc:<name>`
      * of each of their member bindings, ended or not). Offboarding revokes
      * those services' keys but leaves their VMs as they are, running or
-     * not: reassign, stop or delete them.
+     * not: stop or delete them.
      */
     service_vms: Array<OffboardServiceVm>;
     /**
