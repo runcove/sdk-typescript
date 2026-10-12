@@ -86,6 +86,7 @@ export type {
   InvalidVmNameBody,
   KeySummary,
   KsmStats,
+  LocalStatus,
   NewSshKey,
   OciCacheEntry,
   OffboardApiKey,

@@ -1616,6 +1616,28 @@ export type KsmStats = {
 };
 
 /**
+ * What a Mac's local daemon runs beside its VMs, within the system status.
+ * On a Mac `ch_processes` counts the VM helpers (one
+ * `cove __vz-helper` per running or paused VM), and there are no TAP
+ * devices or warm pool.
+ */
+export type LocalStatus = {
+    /**
+     * The embedded Warpgate's SSH port on `127.0.0.1` when it serves.
+     */
+    bastion_ssh_port?: number | null;
+    /**
+     * Why the embedded Warpgate isn't serving; absent when it is.
+     */
+    bastion_unavailable?: string | null;
+    /**
+     * The network owner's gateway when it answers its control socket;
+     * absent when it doesn't.
+     */
+    network_owner_gateway?: string | null;
+};
+
+/**
  * Input for add / full replace.
  */
 export type NewSshKey = {
@@ -2903,6 +2925,7 @@ export type SudoRequiredBody = {
  */
 export type SystemStatus = {
     ch_processes: number;
+    local?: null | LocalStatus;
     memory_total_mb: number;
     memory_used_mb: number;
     paused: number;
