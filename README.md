@@ -139,9 +139,10 @@ docs).
 VM names: `create()` without a `name` lets the server pick one. A name you
 choose must be 3-30 characters of lowercase ASCII letters, digits and hyphens,
 and must not start or end with a hyphen (`web-1`, not `Web_1`, `ab` or
-`-web`); a clone's `new_vm_name` follows the same rule. Any other name throws a
-`CoveAPIError` with `status === 400` and `code === "invalid_vm_name"`, before
-anything is created, and `err.body.name` echoes the refused name.
+`-web`), and must not start with `pool-`, which is reserved for VMs Cove keeps
+ready in advance; a clone's `new_vm_name` follows the same rule. Any other name
+throws a `CoveAPIError` with `status === 400` and `code === "invalid_vm_name"`,
+before anything is created, and `err.body.name` echoes the refused name.
 
 An `http://` `baseUrl` is refused with a `CoveConfigError` unless the host is loopback
 (`localhost`, `127.0.0.0/8`, `[::1]`), because the credential would travel in cleartext; pass
