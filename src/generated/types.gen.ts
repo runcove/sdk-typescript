@@ -6050,6 +6050,10 @@ export type ListSshKeysErrors = {
      */
     401: ApiError;
     /**
+     * No bastion in this mode (local mode without Warpgate, or its embedded Warpgate turned off or not answering); the body gives the reason. Plain-text body.
+     */
+    409: unknown;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -6094,6 +6098,10 @@ export type CreateSshKeyErrors = {
      */
     401: SensitiveOpUnauthorizedResponse;
     /**
+     * No bastion in this mode (local mode without Warpgate, or its embedded Warpgate turned off or not answering); the body gives the reason. Plain-text body.
+     */
+    409: unknown;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -6133,6 +6141,10 @@ export type DeleteSshKeyErrors = {
      * No such key. Plain-text body.
      */
     404: unknown;
+    /**
+     * No bastion in this mode (local mode without Warpgate, or its embedded Warpgate turned off or not answering); the body gives the reason. Plain-text body.
+     */
+    409: unknown;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
@@ -6180,6 +6192,10 @@ export type UpdateSshKeyErrors = {
      * No such key. Plain-text body.
      */
     404: unknown;
+    /**
+     * No bastion in this mode (local mode without Warpgate, or its embedded Warpgate turned off or not answering); the body gives the reason. Plain-text body.
+     */
+    409: unknown;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
@@ -6255,6 +6271,10 @@ export type RevokeSessionErrors = {
      * No such session. Plain-text body.
      */
     404: unknown;
+    /**
+     * No bastion in this mode (local mode without Warpgate, or its embedded Warpgate turned off or not answering); the body gives the reason. Plain-text body.
+     */
+    409: unknown;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
