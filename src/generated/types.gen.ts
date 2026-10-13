@@ -1404,19 +1404,41 @@ export type HealthResponse = {
  * 018 (`host_telemetry`).
  */
 export type HostTelemetryPoint = {
+    /**
+     * Always 0: host CPU is not sampled yet.
+     */
     cpu_pct: number;
     ksm_pages_shared?: number | null;
     ksm_pages_sharing?: number | null;
     mem_swap_used_kb?: number | null;
+    /**
+     * The host's RAM: `MemTotal` on Linux, `hw.memsize` on a Mac.
+     */
     mem_total_kb: number;
+    /**
+     * RAM in use: `MemTotal - MemAvailable` on Linux; on a Mac, RAM less
+     * the free, inactive and speculative pages, as `cove status` shows.
+     */
     mem_used_kb: number;
+    /**
+     * The part of `reservation_mb` held by resize-ups.
+     */
     pending_resize_mb: number;
+    /**
+     * Pooled VMs ready to claim (not already being claimed).
+     */
     pool_available: number;
     psi_cpu_avg10?: number | null;
     psi_io_avg10?: number | null;
     psi_mem_avg10?: number | null;
+    /**
+     * Memory the live capacity reservations hold, in MB.
+     */
     reservation_mb: number;
     ts: number;
+    /**
+     * VMs in the Running state.
+     */
     vms_running: number;
 };
 
@@ -2378,6 +2400,11 @@ export type QuotaUsageSize = {
 export type RamCapacity = {
     headroom_mb: number;
     host_total_mb: number;
+    /**
+     * `MemAvailable` on Linux. 0 on a Mac, like the swap and PSI fields:
+     * a Mac's admission does not read host memory pressure (its guest-RAM
+     * guard caps the VMs instead), so none of them is sampled there.
+     */
     mem_available_mb: number;
     pending_resize_mb: number;
     psi_mem_avg10_pct: number;
