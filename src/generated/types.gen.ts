@@ -3406,6 +3406,19 @@ export type VmDetail = {
      */
     memory_min_mb?: number;
     name: string;
+    /**
+     * What the caller may do to this VM: owner and administrator hold every
+     * permission, a share or team grant holds its role's. The web UI shows
+     * an action only when this lists its permission (`vm.power` for
+     * hibernate and wake, `vm.snapshot` for clone and checkpoint). An API
+     * key's scopes can narrow what it may call further. Absent from a server
+     * that predates the field.
+     *
+     * Plain strings, not a closed set: an owner holds every permission, so
+     * a permission a newer server adds reaches every owner's client. Skip a
+     * name you do not know rather than fail to read the VM.
+     */
+    permissions?: Array<string>;
     state: VmState;
     tags?: {
         [key: string]: string;
