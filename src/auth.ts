@@ -48,8 +48,9 @@ export class BearerAuth implements CoveAuth {
 
 /**
  * `Authorization: Warpgate <ticket>` — the Warpgate SSO ticket the `cove` CLI
- * persists after `cove login` (`~/Library/Application Support/cove/ticket` on
- * macOS, `~/.config/cove/ticket` on Linux). Works against a deployment that has
+ * persists after `cove login` (`contexts/<name>/ticket` under
+ * `~/Library/Application Support/cove` on macOS or `~/.config/cove` on Linux,
+ * `<name>` being the line in `current-context` there). Works against a deployment that has
  * not enabled the external bearer listener; note that sensitive operations may
  * trigger Warpgate's interactive sudo step-up, which a headless caller cannot
  * satisfy (that is what {@link BearerAuth} is for).

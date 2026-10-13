@@ -72,8 +72,9 @@ import { CoveClient, BearerAuth, TicketAuth } from "@runcove/sdk";
 new CoveClient({ baseUrl, token: "cvk_..." });
 
 // 2. Warpgate SSO ticket — the credential the `cove` CLI persists after
-//    `cove login` (~/Library/Application Support/cove/ticket on macOS,
-//    ~/.config/cove/ticket on Linux). Works against a deployment that has
+//    `cove login` (contexts/<name>/ticket under ~/Library/Application
+//    Support/cove on macOS or ~/.config/cove on Linux, <name> being the
+//    line in current-context there). Works against a deployment that has
 //    NOT enabled the bearer listener. Note: sensitive ops (e.g. delete) may
 //    trigger Warpgate's interactive sudo step-up, which a headless caller
 //    cannot satisfy — use a bearer key for automation. Five admin operations

@@ -68,11 +68,19 @@ function requireEnv(key) {
 function credential() {
   if (process.env.COVE_TOKEN) return { token: process.env.COVE_TOKEN };
   if (process.env.COVE_TICKET) return { ticket: process.env.COVE_TICKET };
-  const cliTicketPath =
+  // `cove login` keeps the ticket in the current context's directory.
+  const configDir =
     process.platform === "darwin"
-      ? `${homedir()}/Library/Application Support/cove/ticket`
-      : `${homedir()}/.config/cove/ticket`;
+      ? `${homedir()}/Library/Application Support/cove`
+      : `${homedir()}/.config/cove`;
   try {
+    const context = readFileSync(`${configDir}/current-context`, "utf8").trim();
+    // Only a context name, never a path; and the ticket is that context's
+    // server's, so COVE_URL must name the same server.
+    if (!/^[a-z0-9][a-z0-9._-]{0,62}$/.test(context) || context === "local") {
+      throw new Error("no saved context to read a ticket from");
+    }
+    const cliTicketPath = `${configDir}/contexts/${context}/ticket`;
     return { ticket: readFileSync(cliTicketPath, "utf8").trim() };
   } catch {
     console.error("Set COVE_TOKEN or COVE_TICKET (or `cove login` first). See header comment.");
