@@ -223,6 +223,17 @@ export type AdminProjectMemberRequest = {
  * COALESCEs to, not an override themselves.
  */
 export type AdminQuotaDefaultsResponse = {
+    /**
+     * `Some(true)` when the baseline above was derived
+     * from the host Mac's own resources (macOS local mode with no
+     * `[quota]` block in cove.toml), `Some(false)` when it was not (a
+     * `[quota]` block overrides that derivation, or the Mac's figures could
+     * not be read and the compiled-in defaults apply), `None` off local mode — every non-macOS
+     * daemon, which never derives a quota from host resources. Optional so
+     * a daemon predating this field, or a non-Mac one, keeps emitting
+     * exactly its old JSON (the key is absent, not `false`).
+     */
+    derived_from_mac?: boolean | null;
     disk_gb_max: number;
     ram_mb_max: number;
     vcpus_max: number;
@@ -1657,6 +1668,13 @@ export type LocalStatus = {
      * Why the embedded Warpgate isn't serving; absent when it is.
      */
     bastion_unavailable?: string | null;
+    /**
+     * The cap on the guest RAM running VMs may hold, in MB: `[capacity]
+     * mac_max_guest_ram_fraction` of this Mac's RAM, which create and start
+     * are admitted against (VZ wires guest memory). Absent when the Mac's
+     * RAM couldn't be read at daemon start.
+     */
+    guest_ram_cap_mb?: number | null;
     /**
      * The network owner's gateway when it answers its control socket;
      * absent when it doesn't.
