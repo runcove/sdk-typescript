@@ -8412,7 +8412,7 @@ export type ConnectVmErrors = {
      */
     404: ApiError;
     /**
-     * The VM is not in a connectable state — not running, or still being created (the pool claim has not finished).
+     * The VM is not in a connectable state — not running, still being created (the pool claim has not finished), or hibernated and the wake failed (the message says why and names `cove wake`).
      */
     409: ApiError;
     /**
