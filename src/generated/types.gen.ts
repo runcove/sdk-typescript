@@ -3140,7 +3140,7 @@ export type TestDeliveryResult = {
 /**
  * The traffic monitor's implementation.
  */
-export type TrafficMonitorBackend = 'ebpf' | 'none' | 'unknown';
+export type TrafficMonitorBackend = 'ebpf' | 'relay' | 'none' | 'unknown';
 
 /**
  * Whether the traffic monitor is running.
