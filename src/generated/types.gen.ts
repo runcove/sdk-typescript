@@ -3397,6 +3397,13 @@ export type VmDetail = {
      * vCPUs the VM has now. Quota is charged on this.
      */
     current_vcpus?: number;
+    /**
+     * How a VM on a Mac reaches the network: `"relay"`, which keeps it
+     * apart from other VMs and from the Mac's own services (except the
+     * TCP ports in `[local_network] host_ports`), or `"vmnet"`, which does
+     * not. Present only for a running or paused VM on a Mac.
+     */
+    datapath?: string | null;
     degraded?: boolean;
     degraded_reason?: string | null;
     deletes_in_secs?: number | null;
