@@ -92,6 +92,13 @@ test("empty 204 body resolves to undefined", async () => {
   assert.equal(await makeClient(impl).vms.stop("web-1"), undefined);
 });
 
+test("vms.recover POSTs to the VM's recover route and resolves to undefined", async () => {
+  const { calls, impl } = fakeFetch(empty(200));
+  assert.equal(await makeClient(impl).vms.recover("web-1"), undefined);
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(new URL(calls[0].url).pathname, "/api/vms/web-1/recover");
+});
+
 test("addPort resolves to the port, whether new (201) or already published (200)", async () => {
   const port = { port: 80, public: true, is_primary: true, url: "https://web-1.test/" };
   for (const status of [201, 200]) {

@@ -282,6 +282,15 @@ export class VmsResource {
   }
 
   /**
+   * Return a `failed` VM to `stopped`, so `start` can boot it from its disk.
+   * Scope: `vms:write`. 409 when the VM is not failed, its hypervisor process
+   * may still run, or its disk is missing (delete it instead).
+   */
+  recover(name: string, overrides: RequestOverrides = {}): Promise<void> {
+    return this.http.request<void>("POST", apiPath`/api/vms/${name}/recover`, overrides);
+  }
+
+  /**
    * Wake a VM from a checkpoint. Scope: `vms:write`. A `hibernated` VM
    * wakes from a checkpoint with memory; a `stopped` VM wakes from a
    * disk-only one, whose disk replaces the VM's. Omit `checkpoint_id` to

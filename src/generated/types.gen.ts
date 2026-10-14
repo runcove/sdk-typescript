@@ -9788,6 +9788,56 @@ export type ListVmProcessesResponses = {
 
 export type ListVmProcessesResponse = ListVmProcessesResponses[keyof ListVmProcessesResponses];
 
+export type RecoverVmData = {
+    body?: never;
+    path: {
+        /**
+         * VM name.
+         */
+        name: string;
+    };
+    query?: never;
+    url: '/api/vms/{name}/recover';
+};
+
+export type RecoverVmErrors = {
+    /**
+     * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     */
+    401: ApiError;
+    /**
+     * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `vms:write`.
+     */
+    403: ScopeDeniedBody;
+    /**
+     * No such VM, or not visible to the caller.
+     */
+    404: ApiError;
+    /**
+     * The VM is not failed, or cannot be recovered.
+     */
+    409: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type RecoverVmError = RecoverVmErrors[keyof RecoverVmErrors];
+
+export type RecoverVmResponses = {
+    /**
+     * Recovered: the VM is `stopped`.
+     */
+    200: unknown;
+};
+
 export type ResizeVmData = {
     body: ResizeRequest;
     path: {
