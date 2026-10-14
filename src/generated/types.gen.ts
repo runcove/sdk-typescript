@@ -2961,9 +2961,9 @@ export type SshKey = {
 
 /**
  * 401 body for [`cove_types::ErrorCode::SudoRequired`]. `reauth_window_secs`
- * names how long a fresh sudo re-auth lasts. `message` was added later — like
- * `ScopeDeniedBody`, this used to be `{code, reauth_window_secs}` with no
- * `message` at all.
+ * names how long a fresh sudo re-auth lasts. `message` is a human-readable
+ * explanation, carried here as on `ScopeDeniedBody` so neither body is a
+ * bare `{code, reauth_window_secs}`.
  */
 export type SudoRequiredBody = {
     code: ErrorCode;
@@ -4639,7 +4639,7 @@ export type UpdateVmAgentsData = {
 
 export type UpdateVmAgentsErrors = {
     /**
-     * Two shapes share this status, both declared here. An empty request body — nothing was pushed to any VM — answers the ordinary `ApiError` JSON envelope with `code: "validation_failed"`. This used to answer with the success schema (`UpdateAgentsResponse`) zeroed out (`{updated: 0, failed: 0, results: []}`), which a client could mistake for a real run that legitimately updated nothing; fixed to use the error envelope instead. Separately, a request the framework rejects before this operation runs (for example a body it cannot fully read) answers 400 with a bare `text/plain` message instead.
+     * Two shapes share this status, both declared here. An empty request body — nothing was pushed to any VM — answers the ordinary `ApiError` JSON envelope with `code: "validation_failed"`, not the success schema (`UpdateAgentsResponse`) zeroed out (`{updated: 0, failed: 0, results: []}`), which a client could mistake for a real run that legitimately updated nothing. Separately, a request the framework rejects before this operation runs (for example a body it cannot fully read) answers 400 with a bare `text/plain` message instead.
      */
     400: ApiError;
     /**

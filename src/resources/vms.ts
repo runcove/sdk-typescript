@@ -304,8 +304,8 @@ export class VmsResource {
    * disk rollback: there is no separate rollback call. Waking discards the
    * VM's current disk and every write since the checkpoint is lost, so
    * checkpoint first to keep it. Naming an older checkpoint on a `hibernated`
-   * VM rolls back its disk and memory too. It used to live at
-   * `client.checkpoints.restore()`; `restore` stays reserved for a future
+   * VM rolls back its disk and memory too. There is no
+   * `client.checkpoints.restore()`: `restore` is reserved for a future
    * dedicated operation.
    */
   wake(
