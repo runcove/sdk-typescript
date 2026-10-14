@@ -85,12 +85,9 @@ export class CoveAPIError extends CoveError {
       const b = body as Record<string, unknown>;
       if (typeof b.code === "string") code = b.code;
       else if (typeof b.error === "string") code = b.error;
-      // Admission/quota denials (`DenyReason`, the platform's most
-      // common 409) used to serialize internally-tagged on `reason` instead
-      // of `code` — the one error body that didn't key its discriminant on
-      // `code`. That's fixed server-side (`cove-core/src/capacity/types.rs`
-      // tags on `code` now), so the `reason` fallback that used to sit here
-      // is dead and has been removed.
+      // Admission/quota denials (`DenyReason`, the platform's most common
+      // 409) serialize tagged on `code` (`cove-core/src/capacity/types.rs`),
+      // like every other error body, so no `reason` fallback is needed.
       if (typeof b.message === "string") message = b.message;
       else if (typeof b.error === "string") message = b.error;
     }

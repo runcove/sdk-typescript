@@ -101,10 +101,8 @@ test("409 admission and quota denials expose `code` as the code", () => {
 });
 
 test("the retired `reason` fallback is dead — a stray `reason` key is ignored", () => {
-  // Pins the removal: `fromResponse` used to fall back from `code`
-  // to `reason` to compensate for `DenyReason`'s old tag. That compensation
-  // is gone, so a body carrying only `reason` (no `code`) must NOT surface
-  // it as the error's code.
+  // `fromResponse` does not fall back from `code` to `reason`, so a body carrying only `reason`
+  // (no `code`) must NOT surface it as the error's code.
   const err = CoveAPIError.fromResponse(409, {
     reason: "ram_headroom_exceeded",
     requested_mib: 8192,

@@ -51,7 +51,7 @@ test("empty ticket throws", () => {
 });
 
 test("the credential never reaches JSON.stringify or util.inspect of the client", () => {
-  // TypeScript `private` is erased at compile time, so the token used to be an
+  // TypeScript `private` is erased at compile time, so a token stored as a plain field is an
   // ordinary enumerable property — printed once per resource group by any log
   // line that stringified the client.
   const client = new CoveClient({

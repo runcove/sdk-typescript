@@ -301,8 +301,8 @@ export class CoveHttp {
 
   /**
    * Compose the caller's `signal` with the effective deadline into the single
-   * signal `fetch` accepts. Both have to be honoured: a caller signal used to
-   * discard the timeout outright. `AbortSignal.any` would do this in one line
+   * signal `fetch` accepts. Both have to be honoured: a caller signal must not
+   * discard the timeout. `AbortSignal.any` would do this in one line
    * but landed in Node 20.3, and this package supports Node 18.
    *
    * `override` is the call's own `timeoutMs`; omitted, the client-wide one

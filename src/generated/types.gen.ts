@@ -438,8 +438,7 @@ export type AgentUpdateResult = {
  * Standard API error envelope.
  *
  * `code` is [`ErrorCode`], not `String` — an unlisted code is a compile
- * error, not a runtime string a reviewer has to catch. `field`
- * absorbs what the retired `ValidationFailedBody` carried: when `code` is
+ * error, not a runtime string a reviewer has to catch. When `code` is
  * [`ErrorCode::ValidationFailed`] and the failure is scoped to one request
  * field, `field` names it (`"label"`, `"cursor"`, `"value_b64"`, …); `None`
  * for whole-body or cross-field failures, and for every other code.
@@ -813,13 +812,11 @@ export type ConnectedAppSummary = {
 /**
  * POST /vms/{name}/connect response body.
  *
- * `warpgate_host`/`warpgate_port`/`warpgate_ssh_host_pubkey` renamed to
- * `bastion_host`/`bastion_port`/`bastion_ssh_host_pubkey`. "Warpgate" is a
- * banned public word in this product — an implementation choice, not
- * something a user should ever see — and these fields are the wire contract
- * itself, so they were the most visible remaining violation. No serde
- * alias: there is no external API consumer yet (the SDK has not shipped),
- * so the old spelling is removed rather than carried forward.
+ * The fields are `bastion_host`/`bastion_port`/`bastion_ssh_host_pubkey`,
+ * never `warpgate_*`: "Warpgate" is a banned public word in this product —
+ * an implementation choice, not something a user should ever see — and
+ * these fields are the wire contract itself. No serde alias accepts a
+ * `warpgate_*` spelling.
  */
 export type ConnectionInfo = {
     bastion_host: string;
@@ -1192,9 +1189,8 @@ export type EnableUserResponse = {
  * discriminant on `code` too, and that is all the two share — its values
  * (`ram_headroom_exceeded`, `user_vcpu_quota_exceeded`, …) are a separate closed
  * catalogue and none of them appears here. This text is published in
- * `sdk/openapi.yaml`, and an earlier version said the two "share the same wire
- * vocabulary", which would lead a client author to type every `code` as this
- * enum and be wrong on every 409.
+ * `sdk/openapi.yaml`: a client author who typed every `code` as this enum
+ * would be wrong on every 409.
  *
  * `snake_case`, `<subject>_<condition>`: the subject is
  * the thing that went wrong, not the endpoint.
@@ -1302,11 +1298,10 @@ export type ExecRequestDto = {
 /**
  * POST /vms/{name}/exec-with-secrets request body.
  *
- * The buffered, secrets-injected form of exec, split out of `/exec` because
- * one route cannot answer with both an SSE stream and a JSON body in any
- * describable way. `selector` is REQUIRED here — it is what the operation is
- * for — where on `ExecRequestDto` it is the optional field that used to switch
- * `/exec` between its two response shapes.
+ * The buffered, secrets-injected form of exec, a separate operation from
+ * `/exec` because one route cannot answer with both an SSE stream and a JSON
+ * body in any describable way. `selector` is REQUIRED here — it is what the
+ * operation is for — whereas `/exec` refuses a request carrying one with 400.
  *
  * `timeout_secs` bounds the command as it does on `ExecRequestDto`: past it
  * the guest kills the command's process group and the response is exit 124
@@ -2644,11 +2639,9 @@ export type RotateWebhookSecretResponse = {
 
 /**
  * 403 body for [`ErrorCode::ScopeDenied`]. `required` names the scope the
- * route needs. `message` was added later — the pre-existing body was `{code,
- * required}` with no `message` at all, the one shape in the inventory with
- * neither a `message` nor a `field`; every other typed body keeps `message`
- * mandatory, so this one gets a filled-in default rather than staying the
- * exception.
+ * route needs. `message` is a filled-in human-readable default: every typed
+ * error body carries a mandatory `message`, so this one is not the exception
+ * a bare `{code, required}` would be.
  */
 export type ScopeDeniedBody = {
     code: ErrorCode;
@@ -2830,13 +2823,10 @@ export type Session = {
  * Lifecycle state of a CLI ticket. The service layer computes this; the UI
  * renders a pill from it without having to reason about (revoked_at, expires_at, now).
  *
- * The public surface no longer says "ticket" — the CLI-session sense
- * becomes **session**. This type/operation set was never published in the
- * outgoing hand-written spec (only aggregate counts were), so there is no
- * existing public name to preserve; the schema is minted fresh under the
- * approved vocabulary via `#[schema(as = SessionState)]` rather than
- * carrying "CliTicket" into a first publication. The Rust name is unchanged
- * (internal code keeps saying "ticket" until a later full rename).
+ * The public surface says **session**, not "ticket", for the CLI-session
+ * sense: the schema is published under the approved vocabulary via
+ * `#[schema(as = SessionState)]` rather than carrying "CliTicket". The Rust
+ * name keeps "ticket" internally.
  */
 export type SessionState = 'active' | 'expired' | 'revoked';
 
@@ -2897,15 +2887,14 @@ export type ShareEntry = {
  * adds `owner` (absent from `VmSummaryDto`, since your own VMs have no
  * "owner" distinct from you) and omits `created_at`/`tags`/`share_count`.
  *
- * Named here rather than left inline even though no
- * prior hand-written spec ever published this operation — the outgoing
- * `sdk/openapi.yaml` has no `/vms/shared-with-me` entry at all, so this is a
- * first publication, not a migration.
+ * Named here rather than left inline; the outgoing hand-written
+ * `sdk/openapi.yaml` has no `/vms/shared-with-me` entry at all, so there is
+ * no earlier schema name to keep.
  *
- * Every client-side `list_shared_vms` decodes THIS type. Two of them used to
- * decode `VmSummaryDto` instead — which parsed cleanly (serde tolerates
- * unknown fields) while dropping `owner`, so `cove ls --shared-with-me`
- * rendered no sharer at all. If you add a client impl, decode this shape.
+ * Every client-side `list_shared_vms` decodes THIS type. Decoding
+ * `VmSummaryDto` instead parses cleanly (serde tolerates unknown fields)
+ * while dropping `owner`, so `cove ls --shared-with-me` would render no
+ * sharer at all. If you add a client impl, decode this shape.
  */
 export type SharedVmSummary = {
     degraded?: boolean;
@@ -2962,8 +2951,9 @@ export type SshKey = {
 /**
  * 401 body for [`cove_types::ErrorCode::SudoRequired`]. `reauth_window_secs`
  * names how long a fresh sudo re-auth lasts. `message` is a human-readable
- * explanation, carried here as on `ScopeDeniedBody` so neither body is a
- * bare `{code, reauth_window_secs}`.
+ * explanation, carried here as on `ScopeDeniedBody`, so neither body is
+ * bare: this one is not just `{code, reauth_window_secs}`, nor that one
+ * just `{code, required}`.
  */
 export type SudoRequiredBody = {
     code: ErrorCode;
@@ -3543,10 +3533,9 @@ export type VmProcess = {
  * written down. `Display`, [`std::str::FromStr`] and every SQL predicate that
  * filters the `vms.state` column are all derived from it (via
  * [`VmState::ALL`]), so renaming a state is a compile error at each derived
- * site rather than a silent behaviour change. Two real defects came from the
- * hand-maintained copies this replaces: a reconciler query filtering
- * `force_killing`, a spelling no schema version ever held, and
- * every hibernated VM rendering as an unstyled badge.
+ * site rather than a silent behaviour change. Hand-maintained copies let a
+ * query filter on a spelling no schema version holds, or a badge go
+ * unstyled for a state it does not know.
  *
  * The serde encoding is the one representation still declared separately
  * (attributes cannot call a function); `unit_vm_state_wire_roundtrip` pins the
@@ -3556,19 +3545,16 @@ export type VmProcess = {
  *
  * [`VmState::display_name`] carries the words for a human — `"Force
  * stopping"`, not the wire value `force_stopping`. Presentation layers must
- * use it verbatim rather than capitalising the wire string, which is how
- * `force_stopping` came to be shown as `Force_stopping`.
+ * use it verbatim rather than capitalising the wire string, which would show
+ * `force_stopping` as `Force_stopping`.
  *
- * # The names the rename retired are gone
+ * # Retired names are rejected
  *
- * The 2026-07 terminology rename gave four states clearer names —
- * `suspending` → `hibernating`, `suspended` → `hibernated`, `restoring` →
- * `waking`, `forcekilling` → `force_stopping`. Migration 035 rewrites every
- * stored row, so the old spellings exist nowhere after it runs and are now
- * **rejected** on the way in, by serde and by `FromStr` alike. There is one
- * production environment, a handful of users and no external API consumer, so
- * the data was migrated forward instead of being read in two spellings
- * indefinitely.
+ * The states are `hibernating`, `hibernated`, `waking` and
+ * `force_stopping`; the spellings `suspending`, `suspended`, `restoring` and
+ * `forcekilling` are **rejected** on the way in, by serde and by `FromStr`
+ * alike. Migration 035 rewrites every stored row, so the retired spellings
+ * exist nowhere after it runs and nothing has to be read in two spellings.
  */
 export type VmState = 'creating' | 'running' | 'paused' | 'pooled' | 'stopping' | 'force_stopping' | 'deleting' | 'stopped' | 'failed' | 'deleted' | 'pausing' | 'resuming' | 'checkpointing' | 'hibernating' | 'waking' | 'hibernated';
 
@@ -3576,8 +3562,8 @@ export type VmState = 'creating' | 'running' | 'paused' | 'pooled' | 'stopping' 
  * GET /vms/{name}/stats response body.
  *
  * `timestamp` is the server-side sample time (unix epoch seconds). It is
- * always emitted on the wire; consolidating the previously-duplicated client
- * and server copies restored it to the client, which had silently dropped it.
+ * always emitted on the wire, and the client decodes this same type, so it
+ * cannot silently drop the field.
  */
 export type VmStats = {
     cpu_percent: number;
@@ -3855,8 +3841,8 @@ export type WebhookUpdateInput = {
 
 /**
  * GET /whoami response body. Published as `WhoamiResponse` — the schema name
- * the outgoing hand-written spec used, kept via `#[schema(as = ...)]` so
- * consolidating the two Rust declarations doesn't rename the wire contract.
+ * the outgoing hand-written spec used, kept via `#[schema(as = ...)]` so the
+ * Rust type name does not rename the wire contract.
  */
 export type WhoamiResponse = {
     username: string;
