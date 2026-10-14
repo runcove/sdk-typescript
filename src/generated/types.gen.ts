@@ -10832,9 +10832,9 @@ export type WakeVmErrors = {
      */
     404: ApiError;
     /**
-     * Invalid state transition, or no available checkpoint (`invalid_state_transition`); or no `checkpoint_id` on a `Stopped` VM whose latest checkpoint is disk-only (`disk_rollback_not_named`, whose `message` names both ways forward). One shape only, the `ApiError` envelope: the wake path reserves nothing through admission, so no `DenyReason` can reach this response.
+     * Invalid state transition, or no available checkpoint (`invalid_state_transition`); or no `checkpoint_id` on a `Stopped` VM whose latest checkpoint is disk-only (`disk_rollback_not_named`, whose `message` names both ways forward); or the host has no room for the memory a `Hibernated` VM's wake brings back. Waking is admitted as creating is: every VM slot in use, not enough memory headroom, or swap over the host's threshold refuses the wake and the VM stays `Hibernated`. Unlike `createVm`, whose `[capacity] max_vms` refusal is a 503 `capacity_exhausted`, a wake refused by either slot limit answers this 409 `vm_limit_exceeded`. These answer with different bodies, so the schema is a union of them: a state conflict returns the `ApiError` envelope; a denial returns a `DenyReason` carrying the numbers behind the refusal.
      */
-    409: ApiError;
+    409: VmConflictResponse;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
