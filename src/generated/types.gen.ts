@@ -162,8 +162,9 @@ export type AdminHostStateResponse = {
      */
     broadcast_lag: Array<BroadcastLagEntry>;
     /**
-     * Version of the guest agent this daemon embeds for hot-patching, or
-     * `None` when the build embeds none (`embedded_agent_version`). The admin
+     * Version of the guest agent this daemon hot-patches with, or `None`
+     * when it cannot hot-patch: the build embeds none, or the daemon could
+     * not extract it at startup (`hot_patch_agent_version`). The admin
      * Guest Agents page compares each VM's reported version against it.
      */
     embedded_agent_version?: string | null;
