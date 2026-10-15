@@ -24,6 +24,8 @@ import type {
   OffboardUserReport,
   OffboardUserRequest,
   ProjectMember,
+  RestoreVmsRequest,
+  RestoreVmsResponse,
   RevokeSessionsResponse,
   UpdateAgentsResponse,
 } from "../types.js";
@@ -74,10 +76,10 @@ function offboardRequestError(req: unknown): string | undefined {
  * A 404 means absent or not yours; the SDK never turns it into "forbidden".
  * Every operation here is served on the external API listener of every host.
  *
- * Seven refuse every API key, an admin key included, with 401 `sudo_required`.
+ * Eight refuse every API key, an admin key included, with 401 `sudo_required`.
  * {@link updateVmAgents}, {@link bulkStopVms}, {@link bulkDeleteVms},
- * {@link deleteAnyCheckpoint}, {@link offboardUser} and {@link enableUser}
- * need a recent interactive sign-in, so they run
+ * {@link deleteAnyCheckpoint}, {@link offboardUser}, {@link enableUser} and
+ * {@link restoreVms} need a recent interactive sign-in, so they run
  * with a ticket or a session, never a key. {@link drainHost} is never served
  * on the Warpgate-fronted listener either: in practice a drain runs on the
  * host's Unix socket.
@@ -123,6 +125,28 @@ export class AdminResource {
     return this.http.request<AdminDrainResponse>("POST", apiPath`/api/admin/drain`, {
       ...overrides,
       query: { budget_secs: params.budget_secs },
+    });
+  }
+
+  /**
+   * Start the VMs a host drain stopped: a normal start of each named VM that
+   * is stopped, `concurrency` at a time (omitted: 4; clamped to 1..16), with
+   * one result per VM (`started`, `skipped_running`, `skipped_pool`,
+   * `skipped_owner_disabled`, `skipped_stopping`, `skipped_state`, `not_found`, `failed`). It starts
+   * any stopped VM it is given, not only drained ones; a VM whose owner was
+   * offboarded is always skipped. Feed it `drainHost`'s `attempted_vms`.
+   * Scope: `admin:fleet:write`. 403 not an administrator. Every API key is
+   * refused 401 `sudo_required` (`AuthenticationError`), and the route is never
+   * served on the Warpgate-fronted listener: in practice it runs on the host's
+   * Unix socket.
+   */
+  restoreVms(
+    req: RestoreVmsRequest,
+    overrides: RequestOverrides = {},
+  ): Promise<RestoreVmsResponse> {
+    return this.http.request<RestoreVmsResponse>("POST", apiPath`/api/admin/restore-vms`, {
+      ...overrides,
+      body: req,
     });
   }
 

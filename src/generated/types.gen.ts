@@ -123,8 +123,18 @@ export type AdminCheckpointSummaryPage = {
 
 export type AdminDrainResponse = {
     attempted: number;
+    /**
+     * Every VM the drain set out to stop, with the state it was in, whether or
+     * not its stop finished in time. `targets` reports a timed-out stop as `timed_out`; this
+     * list is the one to restart from. Sorted by name.
+     */
+    attempted_vms: Array<DrainVmDto>;
     budget_secs: number;
     failed: number;
+    /**
+     * Hibernated VMs the drain found and left alone. Reported only.
+     */
+    hibernated: Array<DrainVmDto>;
     succeeded: number;
     targets: Array<DrainTarget>;
     timed_out: number;
@@ -1152,9 +1162,23 @@ export type DrainTarget = {
     error?: string | null;
     owner?: string | null;
     /**
-     * `"stopped"` / `"failed"`. Timed-out VMs are absent (still in flight).
+     * `"stopped"` / `"failed"`. A stop still in flight at the budget is `"timed_out"`.
      */
     result: string;
+    vm_id: string;
+    vm_name: string;
+};
+
+/**
+ * One VM a drain looked at, as it stood when the drain began.
+ */
+export type DrainVmDto = {
+    owner?: string | null;
+    /**
+     * `"running"` or `"paused"` for a VM the drain set out to stop;
+     * `"hibernated"` for one it left alone.
+     */
+    state_before: string;
     vm_id: string;
     vm_name: string;
 };
@@ -2561,6 +2585,67 @@ export type ResizeResult = {
     actual_memory_mb: number;
     partial: boolean;
     reason?: string | null;
+};
+
+/**
+ * One VM to start.
+ */
+export type RestoreVmRef = {
+    /**
+     * The VM's id, as the drain reported it.
+     */
+    vm_id: string;
+};
+
+export type RestoreVmResultDto = {
+    error?: string | null;
+    /**
+     * `started`, `skipped_running` (already running or paused),
+     * `skipped_pool`, `skipped_owner_disabled`, `skipped_stopping` (still
+     * stopping after the wait), `skipped_state` (not stopped: failed,
+     * hibernated or mid-transition), `not_found` or `failed`.
+     */
+    result: string;
+    /**
+     * The id the request named.
+     */
+    vm_id: string;
+    /**
+     * Empty when the VM does not exist.
+     */
+    vm_name: string;
+};
+
+export type RestoreVmsRequest = {
+    /**
+     * Starts in flight at once. Default 4; values outside 1..=16 are clamped.
+     */
+    concurrency?: number | null;
+    /**
+     * The VMs to start. An id named twice is started once.
+     */
+    vms: Array<RestoreVmRef>;
+};
+
+export type RestoreVmsResponse = {
+    /**
+     * Starts allowed in flight at once, after clamping.
+     */
+    concurrency: number;
+    failed: number;
+    /**
+     * Distinct VM ids the request named.
+     */
+    requested: number;
+    /**
+     * One row per distinct id, in the order named.
+     */
+    results: Array<RestoreVmResultDto>;
+    /**
+     * Gone, in the pool, already up, not stopped, or owner disabled.
+     */
+    skipped: number;
+    started: number;
 };
 
 /**
@@ -4484,6 +4569,52 @@ export type CreateQuotaBypassResponses = {
 };
 
 export type CreateQuotaBypassResponse = CreateQuotaBypassResponses[keyof CreateQuotaBypassResponses];
+
+export type RestoreVmsData = {
+    /**
+     * The VMs to start, and optionally how many at once.
+     */
+    body: RestoreVmsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/admin/restore-vms';
+};
+
+export type RestoreVmsErrors = {
+    /**
+     * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
+     */
+    400: ApiError;
+    /**
+     * Interactive login is too old for this operation (`{code: "sudo_required", message, reauth_window_secs}`, with `WWW-Authenticate: cove-reauth realm="sudo"`), or no usable credential at all (`credential_missing` / `credential_invalid` / `credential_expired`). Every API key gets `sudo_required` here, whatever it holds: in practice this runs on the Unix socket. The two answer with different bodies, so the schema is a union of both.
+     */
+    401: SensitiveOpUnauthorizedResponse;
+    /**
+     * Caller is neither an administrator nor a local caller on the daemon socket. Two producers answer this status and both send the same `ApiError` shape: the operation's own gate answers `{code: "admin_required"}` (message `restore requires an admin or local (unix-socket) caller`); the bearer listener's authorization layer answers `{code: "scope_denied", required}` before the operation runs — see this document's top-level error conventions.
+     */
+    403: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type RestoreVmsError = RestoreVmsErrors[keyof RestoreVmsErrors];
+
+export type RestoreVmsResponses = {
+    /**
+     * One result per distinct VM id. `started` + `skipped` + `failed` accounts for `requested`.
+     */
+    200: RestoreVmsResponse;
+};
+
+export type RestoreVmsResponse2 = RestoreVmsResponses[keyof RestoreVmsResponses];
 
 export type DeleteTeamQuotaOverrideData = {
     body?: never;

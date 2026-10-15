@@ -59,6 +59,30 @@ test("admin.updateAutoPauseTimeouts posts the retimeout request", async () => {
   assert.deepEqual(out, reply);
 });
 
+test("admin.restoreVms posts the VM ids and the concurrency", async () => {
+  const reply = {
+    concurrency: 4,
+    requested: 2,
+    started: 1,
+    skipped: 1,
+    failed: 0,
+    results: [
+      { vm_id: "a", vm_name: "alpha", result: "started", error: null },
+      { vm_id: "b", vm_name: "", result: "not_found", error: null },
+    ],
+  };
+  const { calls, impl } = fakeFetch(json(reply));
+  const out = await makeClient(impl).admin.restoreVms({
+    vms: [{ vm_id: "a" }, { vm_id: "b" }],
+    concurrency: 4,
+  });
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(pathOf(calls[0]), "/api/admin/restore-vms");
+  assert.equal(calls[0].init.headers.get("Content-Type"), "application/json");
+  assert.deepEqual(bodyOf(calls[0]), { vms: [{ vm_id: "a" }, { vm_id: "b" }], concurrency: 4 });
+  assert.deepEqual(out, reply);
+});
+
 test("admin.drainHost posts to /api/admin/drain with an optional budget", async () => {
   const reply = { budget_secs: 30, attempted: 2, succeeded: 2, failed: 0, timed_out: 0, targets: [] };
   const { calls, impl } = fakeFetch(json(reply));
