@@ -255,7 +255,8 @@ export class VmsResource {
   /**
    * Delete a VM. Scope: `vms:write`.
    * 202 if deletion is accepted and runs in the background; 204 if a
-   * defunct/failed row squatting the name was purged synchronously.
+   * defunct/failed row squatting the name was purged synchronously, or if an
+   * admin's delete drained an unclaimed warm-pool standby (`pool-…`) by name.
    */
   delete(name: string, overrides: RequestOverrides = {}): Promise<void> {
     return this.http.request<void>("DELETE", apiPath`/api/vms/${name}`, overrides);

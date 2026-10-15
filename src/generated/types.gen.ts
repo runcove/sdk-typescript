@@ -8124,7 +8124,7 @@ export type DeleteVmResponses = {
      */
     202: unknown;
     /**
-     * A defunct/failed row squatting the name was purged synchronously.
+     * A defunct/failed row squatting the name was purged, or an admin drained a pool standby, synchronously.
      */
     204: void;
 };
