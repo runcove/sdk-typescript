@@ -2614,6 +2614,10 @@ export type RevokeShareOutcome = {
  * server's `{"vm_count":N}` body still deserialises.
  */
 export type RotateSummary = {
+    /**
+     * Set by a secret delete only: `true` when the secret was stored and is now gone, `false` when nothing was stored under that name in that scope (the wipe is still sent; absent from rotate and set replies, and from an older server's delete reply).
+     */
+    existed?: boolean | null;
     skipped?: Array<string>;
     unconfirmed?: Array<string>;
     vm_count: number;
