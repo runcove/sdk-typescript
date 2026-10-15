@@ -1408,6 +1408,13 @@ export type HealthResponse = {
     traffic_monitor?: null | TrafficMonitorStatus;
     uptime_secs: number;
     vms_running: number;
+    /**
+     * `true` while this daemon's wake jump is active: Warpgate then sends a
+     * plain `ssh` to a hibernated VM through the jump, which waits while the
+     * VM wakes. Absent when the jump is off or not (yet) registered, and from
+     * servers that predate the field.
+     */
+    wake_jump?: boolean | null;
 };
 
 /**
