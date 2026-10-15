@@ -8927,7 +8927,7 @@ export type DownloadVmFileErrors = {
      */
     413: ApiError;
     /**
-     * The target is not a regular file, or a component of the path is a symlink (`file_not_regular`; the detail names the link).
+     * The target is not a regular file, or a component of the path is a symlink (`file_not_regular`; the detail names the link and where it points).
      */
     422: ApiError;
     /**
@@ -9000,7 +9000,7 @@ export type StatVmFileErrors = {
      */
     413: ApiError;
     /**
-     * The target is not a regular file, or a component of the path is a symlink (`file_not_regular`; the detail names the link).
+     * The target is not a regular file, or a component of the path is a symlink (`file_not_regular`; the detail names the link and where it points).
      */
     422: ApiError;
     /**
@@ -9048,13 +9048,19 @@ export type UploadVmFileData = {
          * Permission bits in octal, `0644` form, within `0777`.
          */
         mode?: string;
+        /**
+         * `true` creates the path's missing directories first, each with mode `0755` and owned by root. Default `false`: a missing directory is a `file_not_found`. A symlink or a non-directory in the path is refused, never followed or replaced. Directories created stay if the upload later fails. Needs a guest agent that supports it (`guest_agent_too_old` otherwise: restart the VM to update it).
+         */
+        mkdir?: boolean;
     };
     url: '/api/vms/{name}/files';
 };
 
 export type UploadVmFileErrors = {
     /**
-     * `path` is not absolute, has an empty, `.` or `..` component, a NUL byte, or is longer than 4095 bytes (`field: "path"`); `mode` is not octal permission bits within `0777` (`field: "mode"`); or the body ended before its `Content-Length` (`field: "Content-Length"`). All `validation_failed`.
+     * `path` is not absolute, has an empty, `.` or `..` component, a NUL byte, or is longer than 4095 bytes (`field: "path"`); `mode` is not octal permission bits within `0777` (`field: "mode"`); `mkdir` is not `true` or `false` (`field: "mkdir"`); or the body ended before its `Content-Length` (`field: "Content-Length"`). All `validation_failed`.
+     *
+     * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
     400: ApiError;
     /**
@@ -9082,7 +9088,7 @@ export type UploadVmFileErrors = {
      */
     413: ApiError;
     /**
-     * The target is not a regular file, or a component of the path is a symlink (`file_not_regular`; the detail names the link).
+     * The target is not a regular file, or a component of the path is a symlink (`file_not_regular`; the detail names the link and where it points); or, with `mkdir=true`, a component of the path exists and is not a directory (`file_not_regular`).
      */
     422: ApiError;
     /**
