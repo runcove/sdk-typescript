@@ -823,6 +823,7 @@ does not call them:
 - `revokeMyConnectedApp` — not served on the bearer listener.
 - `revokeSession` — not served on the bearer listener.
 - `setVmPrimaryPort` — not served on the bearer listener.
+- `updateImage` — not served on the bearer listener.
 
 ## Pagination
 

@@ -1537,6 +1537,51 @@ export type ImagePool = {
     target: number;
 };
 
+/**
+ * A Mac's box against the one the daemon would fetch now (the config's
+ * `[image] mac_box_url`, else the build's): `local.image_update` in the
+ * system status, and the answer to `POST /api/images/update`. Box updates
+ * are never automatic: `cove images update` (or the web UI's button)
+ * starts one.
+ */
+export type ImageUpdate = {
+    /**
+     * The version an update would install, when it is not the installed
+     * box or that can't be told (`unknown` when its file name carries
+     * none).
+     */
+    available_version?: string | null;
+    /**
+     * Why the last update failed, until another starts. The installed box
+     * is unchanged by a failure.
+     */
+    error?: string | null;
+    /**
+     * The image the box provides (`ubuntu-2404-arm64`).
+     */
+    image: string;
+    /**
+     * The installed box's version (from its file name); absent for a box
+     * unpacked before cove recorded it.
+     */
+    installed_version?: string | null;
+    message?: string | null;
+    /**
+     * While updating: the stage (`DownloadingImage`, `VerifyingImage`,
+     * `UnpackingImage`, `OptimisingImage`, `SwitchingImage`), what it is
+     * doing, and how far it has got, as a create's progress event carries
+     * them.
+     */
+    stage?: string | null;
+    state: ImageUpdateState;
+    transfer?: null | TransferProgress;
+};
+
+/**
+ * Where a Mac's box stands (`ImageUpdate.state`).
+ */
+export type ImageUpdateState = 'up_to_date' | 'available' | 'updating' | 'failed' | 'unknown';
+
 export type ImagesResponse = {
     images: Array<ImageEntry>;
     oci_cache: Array<OciCacheEntry>;
@@ -1709,6 +1754,7 @@ export type LocalStatus = {
      * RAM couldn't be read at daemon start.
      */
     guest_ram_cap_mb?: number | null;
+    image_update?: null | ImageUpdate;
     /**
      * The network owner's gateway when it answers its control socket;
      * absent when it doesn't.
@@ -3260,6 +3306,36 @@ export type TrafficMonitorStatus = {
      * Whether that monitor is running.
      */
     state: TrafficMonitorState;
+};
+
+/**
+ * How far a long creation stage has got, in bytes. Sent again about once a
+ * second while the stage runs.
+ */
+export type TransferProgress = {
+    /**
+     * The recent rate, once there is one to measure.
+     */
+    bytes_per_sec?: number | null;
+    /**
+     * Bytes done so far.
+     */
+    done: number;
+    /**
+     * Seconds left at that rate, when both the total and the rate are known.
+     */
+    secs_left?: number | null;
+    /**
+     * Present only while the transfer is stalled (no data for several
+     * seconds): the seconds since the last byte arrived. The rate and time
+     * left are absent then.
+     */
+    stalled_secs?: number | null;
+    /**
+     * The stage's size in bytes, when known (a download without a
+     * `Content-Length` has none).
+     */
+    total?: number | null;
 };
 
 export type TryReserveBody = {
@@ -6021,6 +6097,49 @@ export type ListImagesResponses = {
 };
 
 export type ListImagesResponse = ListImagesResponses[keyof ListImagesResponses];
+
+export type UpdateImageData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/images/update';
+};
+
+export type UpdateImageErrors = {
+    /**
+     * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     */
+    401: ApiError;
+    /**
+     * Not a Mac's local daemon.
+     */
+    404: ApiError;
+    /**
+     * No box is installed yet (the first cove new downloads it), or the box source in cove.toml's [image] is misconfigured (`invalid_state_transition`).
+     */
+    409: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+};
+
+export type UpdateImageError = UpdateImageErrors[keyof UpdateImageErrors];
+
+export type UpdateImageResponses = {
+    /**
+     * The installed box is already the one the daemon would fetch.
+     */
+    200: ImageUpdate;
+    /**
+     * The update is running (started now, or already).
+     */
+    202: ImageUpdate;
+};
+
+export type UpdateImageResponse = UpdateImageResponses[keyof UpdateImageResponses];
 
 export type StreamLifecycleEventsData = {
     body?: never;
