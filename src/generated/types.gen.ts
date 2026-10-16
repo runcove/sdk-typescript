@@ -1756,6 +1756,12 @@ export type LocalStatus = {
     guest_ram_cap_mb?: number | null;
     image_update?: null | ImageUpdate;
     /**
+     * The data volume's free bytes, present only while they are below
+     * 10 GiB. A Mac's VM disks are thin: each takes space
+     * as its guest writes, so a Mac running low can fail a guest's writes.
+     */
+    low_disk_free_bytes?: number | null;
+    /**
      * The network owner's gateway when it answers its control socket;
      * absent when it doesn't.
      */
