@@ -161,6 +161,7 @@ export type {
   SetSecretRequest,
   SetTagRequest,
   SetVmTeamRequest,
+  ShadowingRoute,
   ShareEntry,
   SharedVmSummary,
   SnapshotImageUsage,

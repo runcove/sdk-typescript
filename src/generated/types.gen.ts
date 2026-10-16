@@ -1760,6 +1760,13 @@ export type LocalStatus = {
      * absent when it doesn't.
      */
     network_owner_gateway?: string | null;
+    /**
+     * Another program's routes that take some of the VM subnet away from
+     * vmnet's interface, as the daemon last found them (after its startup
+     * pass, then every 30 s). Empty when there are none, and from older
+     * daemons.
+     */
+    shadowing_routes?: Array<ShadowingRoute>;
 };
 
 /**
@@ -3009,6 +3016,33 @@ export type SetTagRequest = {
 
 export type SetVmTeamRequest = {
     team: string;
+};
+
+/**
+ * A route that takes some of a Mac's VM subnet away from vmnet's interface
+ * (`local.shadowing_routes`): the Mac's traffic for those addresses, and
+ * the VMs' replies from the internet, go out of `interface` instead, so
+ * host connections to the VMs time out and the VMs lose their internet.
+ * A VPN's exit node or accepted subnet route is the usual cause; another
+ * network on the Mac using the same subnet is another.
+ */
+export type ShadowingRoute = {
+    /**
+     * vmnet's interface for the VM subnet (`bridge100`).
+     */
+    bridge: string;
+    /**
+     * The interface it sends through (`utun4`, `en0`, ...).
+     */
+    interface: string;
+    /**
+     * The route's destination, `<address>/<prefix>`.
+     */
+    route: string;
+    /**
+     * The VM subnet, `<address>/24`.
+     */
+    subnet: string;
 };
 
 /**
