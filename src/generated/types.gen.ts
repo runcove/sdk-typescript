@@ -2633,7 +2633,22 @@ export type ResizeRequest = {
     cpus?: number | null;
     disk_size_gb?: number | null;
     memory_mb?: number | null;
+    /**
+     * Reboot the VM when the new vCPU count is below what its running boot
+     * allows (both the vCPUs it runs now and the disk queues it booted
+     * with), which a running VM cannot take live: Cove stops it gracefully,
+     * sets the new boot size and starts it again. Off by default, and a
+     * request without it never reboots. Any other change is made live with
+     * no reboot; a stopped VM takes the new size and stays stopped. Not with
+     * `disk_size_gb`.
+     */
+    restart?: boolean;
 };
+
+/**
+ * What a resize that asked for `restart` did about the reboot.
+ */
+export type ResizeRestart = 'restarted' | 'not_needed' | 'stopped';
 
 /**
  * POST /vms/{name}/resize response body. `actual_cpus` / `actual_memory_mb`
@@ -2645,6 +2660,7 @@ export type ResizeResult = {
     actual_memory_mb: number;
     partial: boolean;
     reason?: string | null;
+    restart?: null | ResizeRestart;
 };
 
 /**
@@ -10163,11 +10179,11 @@ export type ResizeVmErrors = {
      */
     404: ApiError;
     /**
-     * Invalid state transition (e.g. disk resize on a running VM), or an admission/quota denial on the grow. The two answer with different bodies, so the schema is a union of both: a state conflict returns the `ApiError` envelope, a denial returns a `DenyReason` carrying the numbers behind the refusal.
+     * Invalid state transition (e.g. disk resize on a running VM, or `restart` on a paused or hibernated VM), or an admission/quota denial on the grow. The two answer with different bodies, so the schema is a union of both: a state conflict returns the `ApiError` envelope, a denial returns a `DenyReason` carrying the numbers behind the refusal.
      */
     409: VmConflictResponse;
     /**
-     * `disk_size_gb` combined with `cpus`/`memory_mb`; an unaligned `memory_mb`; a `cpus` or `memory_mb` outside the VM's envelope; or a `memory_mb` below the memory the running VM booted with (memory can only shrink back down to the boot size).
+     * `disk_size_gb` combined with `cpus`/`memory_mb` or `restart`; an unaligned `memory_mb`; a `cpus` or `memory_mb` outside the VM's envelope; or a `memory_mb` below the memory the running VM booted with (memory can only shrink back down to the boot size).
      */
     422: ApiError;
     /**

@@ -138,6 +138,7 @@ export type {
   ReservationKind,
   ReservationRef,
   ResizeRequest,
+  ResizeRestart,
   ResizeResult,
   RestoreVmRef,
   RestoreVmResultDto,
