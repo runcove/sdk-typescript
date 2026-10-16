@@ -166,16 +166,23 @@ export type AdminForceCreateResponse = {
  * multi-host fan-in without a Prometheus scrape.
  */
 export type AdminHostStateResponse = {
+    /**
+     * Whether this daemon can hot-patch guests with the embedded agent:
+     * false when the build embeds none or the daemon could not extract it
+     * at startup.
+     */
+    agent_hot_patch?: boolean;
     audit_emit_failed_total: number;
     /**
      * Per-(channel, consumer) broadcast-lag totals this process.
      */
     broadcast_lag: Array<BroadcastLagEntry>;
     /**
-     * Version of the guest agent this daemon hot-patches with, or `None`
-     * when it cannot hot-patch: the build embeds none, or the daemon could
-     * not extract it at startup (`hot_patch_agent_version`). The admin
-     * Guest Agents page compares each VM's reported version against it.
+     * Version of the guest agent this build embeds, or `None` when it
+     * embeds none. It stays set when the daemon could not extract the agent
+     * at startup (`agent_hot_patch` then says so). The admin Guest Agents
+     * page and the Overview's Out of date count compare each VM's reported
+     * version against it.
      */
     embedded_agent_version?: string | null;
     /**
