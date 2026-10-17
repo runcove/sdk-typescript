@@ -200,7 +200,7 @@ export type AdminHostStateResponse = {
      */
     orphaned_checkpoint_bytes: number;
     /**
-     * Count of `Available` checkpoints whose source VM is gone
+     * Count of checkpoints (any state) whose source VM is gone
      * (`checkpoints.vm_id IS NULL`) — the disk cost of the
      * admin-checkpoint-reclamation gap this handler's sibling
      * `GET /admin/checkpoints[?orphaned=true]` closes.
@@ -712,8 +712,8 @@ export type CheckpointPage = {
  * Where a checkpoint is in its life. Lowercase on the wire, like a VM's
  * state.
  *
- * The listings and lookups only ever return `available` checkpoints; the
- * other states exist so a client can name every value the field may hold.
+ * Only the administrator's listing returns checkpoints in other states;
+ * every other listing and lookup returns `available` checkpoints only.
  */
 export type CheckpointState = 'creating' | 'available' | 'restoring' | 'failed';
 
@@ -4221,7 +4221,7 @@ export type DeleteAnyCheckpointErrors = {
      */
     404: ApiError;
     /**
-     * `checkpoint_conflict`: something still needs the checkpoint, and `message` says what. A VM cloned from it, or from a checkpoint whose disk backs onto it, still reads its disk; a restore from it is in flight; or a hibernated VM wakes from it (wake or delete that VM first).
+     * `checkpoint_conflict`: something still needs the checkpoint, and `message` says what. A VM cloned from it, or from a checkpoint whose disk backs onto it, still reads its disk; a restore from it is in flight; a hibernated VM wakes from it (wake or delete that VM first); or it is still being created (retry once it finishes).
      */
     409: ApiError;
     /**
@@ -5767,7 +5767,7 @@ export type DeleteCheckpointErrors = {
      */
     404: ApiError;
     /**
-     * `checkpoint_conflict`: something still needs the checkpoint, and `message` says what. A VM cloned from it, or from a checkpoint whose disk backs onto it, still reads its disk; a restore from it is in flight; or a hibernated VM wakes from it (wake or delete that VM first).
+     * `checkpoint_conflict`: something still needs the checkpoint, and `message` says what. A VM cloned from it, or from a checkpoint whose disk backs onto it, still reads its disk; a restore from it is in flight; a hibernated VM wakes from it (wake or delete that VM first); or it is still being created (retry once it finishes).
      */
     409: ApiError;
     /**
