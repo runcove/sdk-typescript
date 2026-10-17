@@ -2658,8 +2658,12 @@ export type ResizeRestart = 'restarted' | 'not_needed' | 'stopped';
 
 /**
  * POST /vms/{name}/resize response body. `actual_cpus` / `actual_memory_mb`
- * reflect what the hypervisor + guest converged to (which may differ from
- * the request when shrink hits pinned pages — `partial=true`, `reason=Some`).
+ * reflect what the hypervisor + guest converged to, which may differ from
+ * the request: then `partial` is true and `reason` says why. That is a
+ * memory shrink the guest could not give back (pinned pages), or, with
+ * `restart`, a grow after the restart's start that failed (`restart` is
+ * `restarted`, the VM runs at its new boot size, and the resize sent again
+ * without `restart` retries the grow).
  */
 export type ResizeResult = {
     actual_cpus: number;
@@ -10208,7 +10212,7 @@ export type ResizeVmError = ResizeVmErrors[keyof ResizeVmErrors];
 
 export type ResizeVmResponses = {
     /**
-     * Resize outcome (may be partial on shrink).
+     * Resize outcome: partial on a shrink the guest could not give back, or with `restart` on a grow after the start that failed (`reason` says which).
      */
     200: ResizeResult;
 };
