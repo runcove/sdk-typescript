@@ -32,6 +32,7 @@ export const ERROR_CODES = [
   "unknown_image",
   "secret_name_invalid",
   "checkpoint_conflict",
+  "checkpoint_not_found",
   "clone_source_not_found",
   "wake_target_not_found",
   "disk_rollback_not_named",
