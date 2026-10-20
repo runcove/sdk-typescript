@@ -2645,14 +2645,17 @@ export type ResizeRequest = {
      * with), which a running VM cannot take live: Cove stops it gracefully,
      * sets the new boot size and starts it again. Off by default, and a
      * request without it never reboots. Any other change is made live with
-     * no reboot; a stopped VM takes the new size and stays stopped. Not with
-     * `disk_size_gb`.
+     * no reboot; a stopped VM takes the new size and stays stopped. A Mac
+     * has no live resize: there it reboots a running VM for any new vCPU
+     * count, leaves one asked for the vCPUs it has as it is, and never
+     * changes memory. Not with `disk_size_gb`.
      */
     restart?: boolean;
 };
 
 /**
- * What a resize that asked for `restart` did about the reboot.
+ * What a resize that asked for `restart` (on a Mac, any resize but a disk
+ * grow) did about the reboot.
  */
 export type ResizeRestart = 'restarted' | 'not_needed' | 'stopped';
 
@@ -2662,8 +2665,11 @@ export type ResizeRestart = 'restarted' | 'not_needed' | 'stopped';
  * the request: then `partial` is true and `reason` says why. That is a
  * memory shrink the guest could not give back (pinned pages), or, with
  * `restart`, a grow after the restart's start that failed (`restart` is
- * `restarted`, the VM runs at its new boot size, and the resize sent again
- * without `restart` retries the grow).
+ * `restarted` and the VM runs at its new boot size). Off a Mac, the resize
+ * sent again without `restart` retries that grow; a Mac starts the VM at
+ * its new vCPU count and keeps its memory, so it is partial only when the
+ * VM comes up at another size, which its refusal of a live resize cannot
+ * make up.
  */
 export type ResizeResult = {
     actual_cpus: number;
