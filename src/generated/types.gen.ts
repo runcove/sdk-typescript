@@ -1006,6 +1006,12 @@ export type CreateVmRequest = {
 export type CreateVmResponse = {
     name: string;
     vm_id?: string | null;
+    /**
+     * Things the person should know about the create, which went ahead
+     * anyway. On a Mac, a warning that the Mac is short of free memory.
+     * Absent when there are none.
+     */
+    warnings?: Array<string>;
 };
 
 /**
