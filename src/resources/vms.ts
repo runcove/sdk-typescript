@@ -328,9 +328,11 @@ export class VmsResource {
    * for: a memory shrink the guest could not give back, or, with `restart`, a
    * grow after the restart's start that failed (`restart: "restarted"`; off a
    * Mac, send the resize again without `restart` to retry the grow). A Mac
-   * starts the VM at its new vCPU count and keeps its memory, so nothing grows
-   * after the start there, and a resize without `restart` cannot make up a size
-   * the VM came up without.
+   * starts the VM at its new vCPU count and memory (its boot size), so nothing
+   * grows after the start there, and a resize without `restart` cannot make up a
+   * size the VM came up without. On a Mac a running VM's `cpus` or `memory_mb`
+   * change only with `restart`; a memory grow that would leave the Mac short of
+   * free memory is refused before the stop, and a warning is in `warnings`.
    * `disk_size_gb` is mutually exclusive with `cpus`/`memory_mb` (422).
    * `memory_mb` must be a multiple of 2. Disk grow requires a stopped VM.
    */

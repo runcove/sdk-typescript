@@ -2673,7 +2673,7 @@ export type ResizeRestart = 'restarted' | 'not_needed' | 'stopped';
  * `restart`, a grow after the restart's start that failed (`restart` is
  * `restarted` and the VM runs at its new boot size). Off a Mac, the resize
  * sent again without `restart` retries that grow; a Mac starts the VM at
- * its new vCPU count and keeps its memory, so it is partial only when the
+ * its new boot size (vCPUs and memory), so it is partial only when the
  * VM comes up at another size, which its refusal of a live resize cannot
  * make up.
  */
@@ -2683,6 +2683,12 @@ export type ResizeResult = {
     partial: boolean;
     reason?: string | null;
     restart?: null | ResizeRestart;
+    /**
+     * Things the person should know about a resize that went ahead anyway.
+     * On a Mac, a memory grow that leaves the Mac short of free memory.
+     * Absent when there are none.
+     */
+    warnings?: Array<string>;
 };
 
 /**
