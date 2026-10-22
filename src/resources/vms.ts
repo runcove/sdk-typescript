@@ -323,7 +323,9 @@ export class VmsResource {
   /**
    * Resize CPU/memory (running) or grow disk (stopped). Scope: `vms:write`.
    * `restart: true` lets it reboot the VM to go below the vCPUs it booted
-   * with; without it a resize never reboots.
+   * with; without it a resize never reboots. `force: true` shrinks memory even
+   * below what the guest is using, which is otherwise refused (422, naming the
+   * smallest size allowed), as is a shrink whose guest memory cannot be read.
    * `partial: true` (with `reason`) means the VM did not reach the size asked
    * for: a memory shrink the guest could not give back, or, with `restart`, a
    * grow after the restart's start that failed (`restart: "restarted"`; off a

@@ -2644,6 +2644,15 @@ export type ReservationRef = {
 export type ResizeRequest = {
     cpus?: number | null;
     disk_size_gb?: number | null;
+    /**
+     * Shrink a running VM's memory even below what its guest is using. A
+     * memory shrink that would leave the guest less than its use plus
+     * headroom, or whose guest memory cannot be read, is refused, naming
+     * the smallest size allowed when it is known; with `force`
+     * it goes ahead and the override is recorded in the VM's activity. Off
+     * by default. Only with `memory_mb`, and not with `disk_size_gb`.
+     */
+    force?: boolean;
     memory_mb?: number | null;
     /**
      * Reboot the VM when the new vCPU count is below what its running boot
