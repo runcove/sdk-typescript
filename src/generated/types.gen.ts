@@ -759,8 +759,9 @@ export type CloneRequest = {
     /**
      * The clone's name, under the same rule as a created VM's: 3-30
      * characters of lowercase ASCII letters, digits and hyphens, not starting
-     * or ending with a hyphen, and not starting with the reserved `pool-`
-     * prefix. Any other name is refused with 400 `invalid_vm_name`.
+     * or ending with a hyphen, and not starting with the reserved `pool-`,
+     * `capture-` or `oci-bootstrap-` prefixes, and not exactly the reserved
+     * name `warpgate`. Any other name is refused with 400 `invalid_vm_name`.
      */
     new_vm_name: string;
     /**
@@ -969,8 +970,10 @@ export type CreateVmRequest = {
      * The new VM's name. Omit it and the server picks one. A name must be
      * 3-30 characters of lowercase ASCII letters, digits and hyphens, must
      * not start or end with a hyphen, and must not start with `pool-`,
-     * which is reserved for VMs Cove keeps ready in advance; any other name is
-     * refused with 400 `invalid_vm_name`.
+     * `capture-` or `oci-bootstrap-`, which are reserved for VMs Cove keeps
+     * ready in advance, its saved-state capture VMs and its image-build VMs;
+     * and must not be exactly `warpgate`, Warpgate's admin host. Any other
+     * name is refused with 400 `invalid_vm_name`.
      */
     name?: string | null;
     /**
@@ -1655,8 +1658,9 @@ export type InjectSelector = {
  *
  * A name must be 3-30 characters of lowercase ASCII letters, digits and
  * hyphens, and must not start or end with a hyphen; a name starting with
- * `pool-` (reserved for VMs Cove keeps ready in advance) and a name held by a
- * bastion target this server may not take over are refused too. `message`
+ * `pool-`, `capture-` or `oci-bootstrap-` (reserved for Cove's own VMs), the
+ * exact name `warpgate` (reserved for Warpgate's admin host) and a
+ * name held by a bastion target this server may not take over are refused too. `message`
  * says which rule the name broke, `field` is always `"name"`, and `name`
  * echoes the rejected name so a caller that submitted several can tell which
  * one failed.
@@ -8164,7 +8168,7 @@ export type CreateVmData = {
 
 export type CreateVmErrors = {
     /**
-     * Malformed request body, a refused name: one outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen), starting with the reserved `pool-` prefix, or held by a bastion target this server may not take over, or a bad entry in `initial_tags`. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a malformed body answers the `ApiError` envelope with `validation_failed`, and a bad tag answers it with the tag code (`tag_invalid_key`, `tag_reserved_prefix` for a key starting `cove:`, which only Cove sets, `tag_invalid_value`, and `tag_invalid` for a `project` tag whose project the caller is not a member of). Nothing is reserved.
+     * Malformed request body, a refused name: one outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen), starting with a reserved prefix (`pool-`, `capture-`, `oci-bootstrap-`), being the reserved name `warpgate`, or held by a bastion target this server may not take over, or a bad entry in `initial_tags`. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a malformed body answers the `ApiError` envelope with `validation_failed`, and a bad tag answers it with the tag code (`tag_invalid_key`, `tag_reserved_prefix` for a key starting `cove:`, which only Cove sets, `tag_invalid_value`, and `tag_invalid` for a `project` tag whose project the caller is not a member of). Nothing is reserved.
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
@@ -11221,7 +11225,7 @@ export type CloneVmData = {
 
 export type CloneVmErrors = {
     /**
-     * `source_checkpoint_id` is not a valid UUID, or `new_vm_name` is refused: outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen), starting with the reserved `pool-` prefix, or held by a bastion target this server may not take over. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a bad `source_checkpoint_id` answers the `ApiError` envelope with `validation_failed`, and a bad entry in `tags` answers it with the tag code (`tag_invalid_key`, `tag_reserved_prefix`, `tag_invalid_value`, and `tag_invalid` for a `project` tag whose project the caller is not a member of).
+     * `source_checkpoint_id` is not a valid UUID, or `new_vm_name` is refused: outside the name rule (3-30 characters, lowercase letters, digits and hyphens, no leading or trailing hyphen), starting with a reserved prefix (`pool-`, `capture-`, `oci-bootstrap-`), being the reserved name `warpgate`, or held by a bastion target this server may not take over. The two answer with different bodies, so the schema is a union of both: the name refusal answers `invalid_vm_name` with `field: "name"` and echoes the rejected name in `name`; a bad `source_checkpoint_id` answers the `ApiError` envelope with `validation_failed`, and a bad entry in `tags` answers it with the tag code (`tag_invalid_key`, `tag_reserved_prefix`, `tag_invalid_value`, and `tag_invalid` for a `project` tag whose project the caller is not a member of).
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
