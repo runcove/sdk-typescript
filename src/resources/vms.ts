@@ -26,6 +26,7 @@ import type {
   ProxyPortInfo,
   ProxyUrlInfo,
   RemovalResponse,
+  RenameVmRequest,
   ResizeRequest,
   ResizeResult,
   RevokeShareOutcome,
@@ -361,6 +362,39 @@ export class VmsResource {
     overrides: RequestOverrides = {},
   ): Promise<CloneResponse> {
     return this.http.request<CloneResponse>("POST", apiPath`/api/vms/${source}/clone`, {
+      ...overrides,
+      body: req,
+    });
+  }
+
+  /**
+   * Rename a VM to `req.new_name`. Scope: `vms:write`; the caller needs the
+   * permission to delete the VM (404 otherwise, the same as a missing VM).
+   * The VM keeps its id, disk, state and everything attached to it, and a
+   * running VM keeps running; its SSH and HTTP addresses, DNS name and
+   * hostname move to the new name, and the old name goes into the same
+   * cooldown a deleted VM's name does. Resolves to the VM's detail under its
+   * new name. When the new name no longer leads the caller to the VM by the
+   * time the rename is done, the body is partial: `vm_id`, `name` and `state`
+   * (and the degraded flags) are set, and every other field is an empty
+   * string, zero or its default.
+   *
+   * 400 `invalid_vm_name` when the new name breaks the name rule, is the VM's
+   * own name or is held by a bastion target. A 409 `ConflictError` is either a
+   * taken name (`vm_name_taken`; `err.createConflict()` gives
+   * `{kind:"name_taken", retryAfterSecs}`, `retryAfterSecs` set while the
+   * name is in its cooldown) or `invalid_state_transition` (the VM is being
+   * created or deleted, or another operation or an earlier rename is still
+   * running on it: retry shortly). 502 means the rename was undone and the VM
+   * keeps its name; 503 that it failed and was undone, or is being undone in
+   * the background: read the VM's name before retrying.
+   */
+  rename(
+    name: string,
+    req: RenameVmRequest,
+    overrides: RequestOverrides = {},
+  ): Promise<VmDetail> {
+    return this.http.request<VmDetail>("POST", apiPath`/api/vms/${name}/rename`, {
       ...overrides,
       body: req,
     });

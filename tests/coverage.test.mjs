@@ -19,9 +19,7 @@ import { fileURLToPath } from "node:url";
  * covers them (spec R4): operationId -> why it is not wrapped yet. Empty unless such a pull
  * request is in flight; the lane that adds the SDK methods removes the entry.
  */
-const PENDING_OTHER_LANE = new Map([
-  ["renameVm", "the rename wrappers land in a follow-up pull request"],
-]);
+const PENDING_OTHER_LANE = new Map([]);
 
 // ---------------------------------------------------------------------------
 // 1a — the contract

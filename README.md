@@ -141,7 +141,7 @@ VM names: `create()` without a `name` lets the server pick one. A name you
 choose must be 3-30 characters of lowercase ASCII letters, digits and hyphens,
 and must not start or end with a hyphen (`web-1`, not `Web_1`, `ab` or
 `-web`), and must not start with `pool-`, `capture-` or `oci-bootstrap-`, and must not be exactly `warpgate`; these
-are reserved for Cove's own VMs and Warpgate's admin host; a clone's `new_vm_name` follows the same rule. Any other name
+are reserved for Cove's own VMs and Warpgate's admin host; a clone's `new_vm_name` and a rename's `new_name` follow the same rule. Any other name
 throws a `CoveAPIError` with `status === 400` and `code === "invalid_vm_name"`,
 before anything is created, and `err.body.name` echoes the refused name.
 
@@ -531,6 +531,15 @@ held by a live VM or is still in its cooldown after a delete or rename (`retryAf
 says how long is left), `{ kind: "denied", reason }` for a capacity or quota
 `DenyReason`, and `undefined` for any other 409 body.
 
+`vms.rename(name, { new_name })` reads its 409 the same way: a taken
+`new_name` is `{ kind: "name_taken", retryAfterSecs }` (`retryAfterSecs` set
+while the name is in its cooldown, absent when another VM holds it), and a VM
+that cannot be renamed now (`invalid_state_transition`: being created or
+deleted, or another operation is running on it) is `undefined`; retry it
+shortly. A 502 means the rename was undone and the VM keeps its name; a 503
+means it failed and was undone or is being undone in the background, so read
+the VM's name before retrying.
+
 ```ts
 import { ConflictError } from "@runcove/sdk";
 
@@ -811,7 +820,7 @@ listener of every host.
 ## Not covered, and why
 
 The SDK has a method for every operation the bearer (`external`) listener
-serves, except `renameVm`, which no method wraps yet; `tests/coverage.test.mjs` fails when any other is missing, when the SDK calls
+serves; `tests/coverage.test.mjs` fails when any other is missing, when the SDK calls
 an operation that listener does not serve, or when this list drifts from the
 contract. These operations are not served on the bearer listener, so the SDK
 does not call them:
@@ -893,6 +902,7 @@ Revoking one is not offered to an API key.
 - **429 `rate_limited`** — any method, when this source IP is over the bearer listener's per-IP budget (default 30 requests per second): `RateLimitError` with `retryAfterSecs`. Retry after it; the SDK does not.
 - **503 `unavailable` "file transfer busy"** — the file-transfer API's per-person cap: one person (a user, across their sessions and personal keys, or a team key's team) may have 4 uploads or downloads, and 8 file stats, in flight on a host; one more is refused at once, with no `Retry-After`. Retry when one of your transfers finishes. It throws `UnavailableError`.
 - **426 `CLI_TOO_OLD`** — any method, when the server no longer speaks this SDK's API version: `UpgradeRequiredError` (see "Versions").
+- **409 `vm_name_taken`** — `vms.create`, `vms.clone`, `vms.rename`: the name is held by a live VM or is in its cooldown after a delete or rename (`createConflict().retryAfterSecs`).
 - **409 with `DenyReason`** — capacity-check/quota denials on `vms.create`, `vms.start`, `vms.resume`, `vms.resize`, `vms.clone`, `vms.wake`, `host.reserve`.
 
 ## Development

@@ -12,6 +12,7 @@ import {
   CoveConnectionError,
   CoveError,
   CoveTimeoutError,
+  NotFoundError,
 } from "../dist/index.js";
 
 /** Fake fetch that records calls and replays queued responses (last one sticks). */
@@ -97,6 +98,55 @@ test("vms.recover POSTs to the VM's recover route and resolves to undefined", as
   assert.equal(await makeClient(impl).vms.recover("web-1"), undefined);
   assert.equal(calls[0].init.method, "POST");
   assert.equal(new URL(calls[0].url).pathname, "/api/vms/web-1/recover");
+});
+
+test("vms.rename POSTs new_name to the VM's rename route and resolves to its detail", async () => {
+  const detail = { vm_id: "0190a000-0000-7000-8000-000000000001", name: "api-server", state: "running" };
+  const { calls, impl } = fakeFetch(json(detail));
+  assert.deepEqual(await makeClient(impl).vms.rename("web-1", { new_name: "api-server" }), detail);
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(new URL(calls[0].url).pathname, "/api/vms/web-1/rename");
+  assert.equal(calls[0].init.headers.get("Content-Type"), "application/json");
+  assert.deepEqual(JSON.parse(calls[0].init.body), { new_name: "api-server" });
+});
+
+test("vms.rename 409 for a name in its cooldown narrows to name_taken with retryAfterSecs", async () => {
+  const body = { code: "vm_name_taken", message: "in cooldown", name: "api-server", retry_after_secs: 240 };
+  const { impl } = fakeFetch(json(body, 409));
+  await assert.rejects(makeClient(impl).vms.rename("web-1", { new_name: "api-server" }), (err) => {
+    assert.ok(err instanceof ConflictError);
+    assert.equal(err.code, "vm_name_taken");
+    assert.deepEqual(err.createConflict(), { kind: "name_taken", retryAfterSecs: 240 });
+    return true;
+  });
+});
+
+test("vms.rename 409 for a name another VM holds narrows to name_taken without retryAfterSecs", async () => {
+  const body = { code: "vm_name_taken", message: "taken", name: "api-server" };
+  const { impl } = fakeFetch(json(body, 409));
+  await assert.rejects(makeClient(impl).vms.rename("web-1", { new_name: "api-server" }), (err) => {
+    assert.ok(err instanceof ConflictError);
+    assert.deepEqual(err.createConflict(), { kind: "name_taken", retryAfterSecs: undefined });
+    return true;
+  });
+});
+
+test("vms.rename 409 invalid_state_transition is a ConflictError that is not a name conflict", async () => {
+  const { impl } = fakeFetch(json({ code: "invalid_state_transition", message: "busy" }, 409));
+  await assert.rejects(makeClient(impl).vms.rename("web-1", { new_name: "api-server" }), (err) => {
+    assert.ok(err instanceof ConflictError);
+    assert.equal(err.code, "invalid_state_transition");
+    assert.equal(err.createConflict(), undefined);
+    return true;
+  });
+});
+
+test("vms.rename 404 is a NotFoundError", async () => {
+  const { impl } = fakeFetch(json({ code: "vm_not_found", message: "no such VM" }, 404));
+  await assert.rejects(
+    makeClient(impl).vms.rename("ghost", { new_name: "api-server" }),
+    (err) => err instanceof NotFoundError && err.status === 404,
+  );
 });
 
 test("addPort resolves to the port, whether new (201) or already published (200)", async () => {
