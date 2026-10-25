@@ -10281,7 +10281,7 @@ export type RenameVmErrors = {
      */
     404: ApiError;
     /**
-     * `new_name` is taken (`vm_name_taken`, the body `createVm` answers: `retry_after_secs` is set while the name, given up by a VM deleted or renamed too recently, is still in its cooldown); or the VM cannot be renamed now (`invalid_state_transition`: it is being created or deleted, another operation is running on it, or its last rename is still being finished).
+     * `new_name` is taken (`vm_name_taken`, the body `createVm` answers: `retry_after_secs` is set while the name, given up by a VM deleted or renamed too recently, is still in its cooldown); or the VM cannot be renamed now (`invalid_state_transition`: it is being created or deleted, another operation is running on it, its last rename is still being finished, or a share withdrawal naming it is still being applied).
      */
     409: VmRenameConflictResponse;
     /**
@@ -10299,7 +10299,7 @@ export type RenameVmErrors = {
      */
     502: ApiError;
     /**
-     * The rename failed: either it was undone and the VM keeps its name (its new DNS record could not be added, or another of its steps failed), or it could not be undone at once and the VM is put back under its old name in the background. Either way, retry shortly.
+     * The rename failed: either it was undone and the VM keeps its name (its new DNS record could not be added, or another of its steps failed), or it could not be undone at once and the VM is put back under its old name in the background. Either way, retry shortly. If another operation closed the rename before it could be undone, the VM's name is unknown: check it before retrying.
      */
     503: ApiError;
 };
