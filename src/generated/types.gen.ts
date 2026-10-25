@@ -2574,6 +2574,16 @@ export type RenameBody = {
 };
 
 /**
+ * Request body for `POST /api/vms/{name}/rename`.
+ */
+export type RenameVmRequest = {
+    /**
+     * The VM's new name, under the same rule as a new VM's name.
+     */
+    new_name: string;
+};
+
+/**
  * Response of `POST /api/webhooks/{id}/deliveries/{delivery_id}/replay`
  * (`handlers::webhook_deliveries::replay_delivery`). Not named in the
  * outgoing hand-written spec (it was an inline object there) — named here
@@ -3521,11 +3531,11 @@ export type UserStatus = {
 };
 
 /**
- * The two shapes a **400** carries on the VM-creating operations
+ * The two shapes a **400** carries on the operations that name a VM
  * (same treatment as [`VmConflictResponse`]).
  *
- * Both are genuinely reachable on `POST /api/vms` and `POST
- * /api/vms/{source}/clone`, which is the stated bar for publishing a union
+ * Both are genuinely reachable on `POST /api/vms`, `POST
+ * /api/vms/{source}/clone` and `POST /api/vms/{name}/rename`, which is the stated bar for publishing a union
  * rather than picking one shape and being wrong about the other: a malformed
  * body (or, on clone, an unparseable `source_checkpoint_id`) answers with the
  * plain `ApiError` envelope, while a refused name for the new VM answers with
@@ -3540,8 +3550,8 @@ export type VmBadRequestResponse = ApiError | InvalidVmNameBody;
  *
  * - A **taken name** returns [`VmNameTakenBody`], the same body `createVm`
  * answers: `new_vm_name` is held by a live VM, or is still inside the
- * post-delete cooldown, in which case `retry_after_secs` says how long is
- * left. `code` is `vm_name_taken`.
+ * cooldown after a delete or rename, in which case `retry_after_secs` says
+ * how long is left. `code` is `vm_name_taken`.
  * - A **state conflict** — `source` is not `Running`/`Paused`, or the
  * checkpoint cannot be cloned — returns the ordinary `ApiError` envelope.
  * `code` is `invalid_state_transition`.
@@ -3600,7 +3610,7 @@ export type VmCountResult = {
  * [`VmConflictResponse`]).
  *
  * - A **taken name** returns [`VmNameTakenBody`]: the name is held by a live
- * VM, or is still inside the post-delete cooldown, in which case
+ * VM, or is still inside the cooldown after a delete or rename, in which case
  * `retry_after_secs` says how long is left. `code` is `vm_name_taken`.
  * - A **capacity or quota denial** returns a `DenyReason`, carrying the
  * numbers behind the refusal so a caller can retry smaller or wait.
@@ -3789,6 +3799,21 @@ export type VmProcess = {
     pid: number;
     rss_bytes: number;
 };
+
+/**
+ * The 409 body of `renameVm`, which refuses for two different reasons and
+ * answers with a different shape for each (same treatment as
+ * [`VmConflictResponse`]).
+ *
+ * - A **taken name** returns [`VmNameTakenBody`], the same body `createVm`
+ * answers: `new_name` is held by a live VM, or is still inside the
+ * cooldown of a name a VM gave up, in which case `retry_after_secs` says
+ * how long is left. `code` is `vm_name_taken`.
+ * - A **state conflict** — the VM is being created or deleted, or another
+ * operation or an earlier rename of it is still running — returns the
+ * ordinary `ApiError` envelope. `code` is `invalid_state_transition`.
+ */
+export type VmRenameConflictResponse = VmNameTakenBody | ApiError;
 
 /**
  * VM lifecycle state as reported by the Cove REST API and persisted by core.
@@ -8182,7 +8207,7 @@ export type CreateVmErrors = {
      */
     403: ApiError;
     /**
-     * The requested name is already taken (or still in post-delete cooldown), admission/quota refused the create, or `initial_tags` has more than 50 entries (49 on a VM an agent creates, which Cove tags `cove:created-by: agent`). These answer with different bodies, so the schema is a union of them: the name conflict returns `vm_name_taken` with `name` and an optional `retry_after_secs`, the denial returns a `DenyReason`, and too many tags returns the `ApiError` envelope with `too_many_tags`.
+     * The requested name is already taken (or still in cooldown after a delete or rename), admission/quota refused the create, or `initial_tags` has more than 50 entries (49 on a VM an agent creates, which Cove tags `cove:created-by: agent`). These answer with different bodies, so the schema is a union of them: the name conflict returns `vm_name_taken` with `name` and an optional `retry_after_secs`, the denial returns a `DenyReason`, and too many tags returns the `ApiError` envelope with `too_many_tags`.
      */
     409: VmCreateConflictResponse;
     /**
@@ -10224,6 +10249,72 @@ export type RecoverVmResponses = {
     200: unknown;
 };
 
+export type RenameVmData = {
+    body: RenameVmRequest;
+    path: {
+        /**
+         * The VM's current name.
+         */
+        name: string;
+    };
+    query?: never;
+    url: '/api/vms/{name}/rename';
+};
+
+export type RenameVmErrors = {
+    /**
+     * `new_name` breaks the name rule, is the VM's own name, or is held by a bastion target (`invalid_vm_name`, with `name` echoing it); or the body could not be decoded (`validation_failed`).
+     *
+     * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
+     */
+    400: VmBadRequestResponse;
+    /**
+     * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     */
+    401: ApiError;
+    /**
+     * The credential is valid but its scopes do not satisfy this operation. `required` names the scope the route needs — compare it against the key's granted scopes rather than re-requesting. This operation requires `vms:write`.
+     */
+    403: ScopeDeniedBody;
+    /**
+     * No such VM, or not one the caller may delete.
+     */
+    404: ApiError;
+    /**
+     * `new_name` is taken (`vm_name_taken`, the body `createVm` answers: `retry_after_secs` is set while the name, given up by a VM deleted or renamed too recently, is still in its cooldown); or the VM cannot be renamed now (`invalid_state_transition`: it is being created or deleted, another operation is running on it, or its last rename is still being finished).
+     */
+    409: VmRenameConflictResponse;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+    /**
+     * The bastion refused to move the VM's targets. The rename was undone and the VM keeps its name; retry.
+     */
+    502: ApiError;
+    /**
+     * The rename failed: either it was undone and the VM keeps its name (its new DNS record could not be added, or another of its steps failed), or it could not be undone at once and the VM is put back under its old name in the background. Either way, retry shortly.
+     */
+    503: ApiError;
+};
+
+export type RenameVmError = RenameVmErrors[keyof RenameVmErrors];
+
+export type RenameVmResponses = {
+    /**
+     * Renamed: the VM's detail under its new name. Should the new name no longer lead the caller to this VM once the rename is done (renamed again, deleted, or no longer visible to them), or its detail not be readable, the body carries only the VM's id, its new name and the state it was in when renamed, its other fields empty.
+     */
+    200: VmDetail;
+};
+
+export type RenameVmResponse = RenameVmResponses[keyof RenameVmResponses];
+
 export type ResizeVmData = {
     body: ResizeRequest;
     path: {
@@ -11275,7 +11366,7 @@ export type CloneVmErrors = {
      */
     404: ApiError;
     /**
-     * `new_vm_name` is taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`), or an agent clones a VM that already has 50 tags (`too_many_tags`; the copy's `cove:created-by: agent` tag would be the 51st). These answer with different bodies, so the schema is a union of them: a taken name answers `vm_name_taken` with the same body as `createVm` — `name`, plus `retry_after_secs` when the name belonged to a VM deleted too recently and is still in its post-delete cooldown; a state conflict returns the `ApiError` envelope; a denial returns a `DenyReason` carrying the numbers behind the refusal.
+     * `new_vm_name` is taken, `source` is not `Running`/`Paused`, the checkpoint was taken while the VM ran with nested virtualisation on and `source` is not opted in to it (replace the checkpoint), or an admission/quota denial on the clone's resources, or `tags` has more than 50 entries (`too_many_tags`), or an agent clones a VM that already has 50 tags (`too_many_tags`; the copy's `cove:created-by: agent` tag would be the 51st). These answer with different bodies, so the schema is a union of them: a taken name answers `vm_name_taken` with the same body as `createVm` — `name`, plus `retry_after_secs` when the name was given up too recently, by a delete or a rename, and is still in its cooldown; a state conflict returns the `ApiError` envelope; a denial returns a `DenyReason` carrying the numbers behind the refusal.
      */
     409: VmCloneConflictResponse;
     /**

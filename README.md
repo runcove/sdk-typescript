@@ -527,7 +527,7 @@ shape — inspect `err.body` for `code` and its companion numeric fields.
 
 A 409 from `vms.create` has two causes, and `ConflictError.createConflict()`
 tells them apart: `{ kind: "name_taken", retryAfterSecs }` when the name is
-held by a live VM or is still in its post-delete cooldown (`retryAfterSecs`
+held by a live VM or is still in its cooldown after a delete or rename (`retryAfterSecs`
 says how long is left), `{ kind: "denied", reason }` for a capacity or quota
 `DenyReason`, and `undefined` for any other 409 body.
 
@@ -811,7 +811,7 @@ listener of every host.
 ## Not covered, and why
 
 The SDK has a method for every operation the bearer (`external`) listener
-serves; `tests/coverage.test.mjs` fails when any other is missing, when the SDK calls
+serves, except `renameVm`, which no method wraps yet; `tests/coverage.test.mjs` fails when any other is missing, when the SDK calls
 an operation that listener does not serve, or when this list drifts from the
 contract. These operations are not served on the bearer listener, so the SDK
 does not call them:

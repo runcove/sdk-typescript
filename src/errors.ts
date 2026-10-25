@@ -140,7 +140,7 @@ export class NotFoundError extends CoveAPIError {}
 export type CreateConflict =
   | {
       /**
-       * The name is held by a live VM, or is still in its post-delete cooldown;
+       * The name is held by a live VM, or is still in its cooldown after a delete or rename;
        * `retryAfterSecs` is how long the cooldown has left (absent for a live VM).
        */
       kind: "name_taken";
