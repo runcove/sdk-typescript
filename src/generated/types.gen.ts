@@ -8362,6 +8362,10 @@ export type GetVmData = {
 
 export type GetVmErrors = {
     /**
+     * The caller's create of this name was accepted, then refused because of its name, such as when a bastion target this server may not take over holds it. `code` is `invalid_vm_name`.
+     */
+    400: InvalidVmNameBody;
+    /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
      */
     401: ApiError;
@@ -8374,6 +8378,10 @@ export type GetVmErrors = {
      */
     404: ApiError;
     /**
+     * The caller's create of this name was accepted, then refused. The body is a `DenyReason` when admission or a quota refused it, otherwise the `ApiError` envelope, such as when the name was taken or the VM was not in a state the create could finish from.
+     */
+    409: VmConflictResponse;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -8383,6 +8391,14 @@ export type GetVmErrors = {
      * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
+    /**
+     * The caller's create of this name was accepted, then failed and was removed, such as when its SSH access could not be registered.
+     */
+    500: ApiError;
+    /**
+     * The caller's create of this name was accepted, then refused because the host had no room for it (`capacity_exhausted`).
+     */
+    503: ApiError;
 };
 
 export type GetVmError = GetVmErrors[keyof GetVmErrors];
@@ -8919,6 +8935,10 @@ export type StreamVmEventsData = {
 
 export type StreamVmEventsErrors = {
     /**
+     * The caller's create of this name was accepted, then refused because of its name, such as when a bastion target this server may not take over holds it. `code` is `invalid_vm_name`.
+     */
+    400: InvalidVmNameBody;
+    /**
      * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
      */
     401: ApiError;
@@ -8931,6 +8951,10 @@ export type StreamVmEventsErrors = {
      */
     404: ApiError;
     /**
+     * The caller's create of this name was accepted, then refused. The body is a `DenyReason` when admission or a quota refused it, otherwise the `ApiError` envelope, such as when the name was taken or the VM was not in a state the create could finish from.
+     */
+    409: VmConflictResponse;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -8940,6 +8964,14 @@ export type StreamVmEventsErrors = {
      * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
+    /**
+     * The caller's create of this name was accepted, then failed and was removed, such as when its SSH access could not be registered.
+     */
+    500: ApiError;
+    /**
+     * The caller's create of this name was accepted, then refused because the host had no room for it (`capacity_exhausted`).
+     */
+    503: ApiError;
 };
 
 export type StreamVmEventsError = StreamVmEventsErrors[keyof StreamVmEventsErrors];

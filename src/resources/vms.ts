@@ -224,6 +224,11 @@ export class VmsResource {
    * During the cold-create window the server synthesizes a partial DTO with
    * `state: "creating"`, empty `mac_address`, and zeroed sizes. 404-over-403:
    * a VM that exists but isn't yours reads the same as a missing one.
+   * For 5 minutes after your own create of `name` was accepted and then
+   * failed, the failure's own error is thrown in place of the 404:
+   * `ConflictError` for a refusal by admission or a quota, `ServerError` for
+   * a host with no room (503) or a create that failed (500). The server marks
+   * that answer with the header `x-cove-create-failed: 1`.
    */
   get(name: string, overrides: RequestOverrides = {}): Promise<VmDetail> {
     return this.http.request<VmDetail>("GET", apiPath`/api/vms/${name}`, overrides);
