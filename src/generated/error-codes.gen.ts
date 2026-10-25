@@ -17,6 +17,7 @@ export const ERROR_CODES = [
   "invalid_vm_name",
   "capacity_exhausted",
   "invalid_state_transition",
+  "create_failed_vm_kept",
   "vm_access_denied",
   "admin_required",
   "too_many_tags",
