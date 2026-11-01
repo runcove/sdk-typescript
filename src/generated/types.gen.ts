@@ -2185,13 +2185,27 @@ export type OffboardUserReport = {
      */
     teams_left: Array<OffboardTeam>;
     /**
-     * The Warpgate tickets in the user's name, and every port invite the
-     * user minted on any VM (on a VM someone else owns it is a ticket in
-     * the owner's name; its `vm.invite.created` audit row names the user),
+     * The Warpgate tickets in the user's name on targets this Cove instance
+     * owns (tickets on another Cove instance's targets on a shared Warpgate
+     * are left), and every port invite the user minted on any VM this
+     * instance owns (on a VM someone else owns it is a ticket in the
+     * owner's name; its `vm.invite.created` audit row names the user),
      * deleted after the keys, one result each. Empty when Cove runs without
      * Warpgate.
      */
     tickets_deleted: Array<OffboardTicket>;
+    /**
+     * How many Warpgate tickets in the user's name this run saw on targets
+     * another Cove instance owns, on a Warpgate shared with other Cove
+     * instances, counted over all its passes (one that instance removed
+     * during the run is still counted). They are left for that instance's
+     * offboarding, and while any remain Warpgate refuses to delete the
+     * user. A count only, and not a failed item. Only passes that could list
+     * the targets at Warpgate count (a pass that could not reports a failed
+     * ticket item). 0 from a server that predates it, when Cove runs without
+     * Warpgate, or when no pass could list the targets.
+     */
+    tickets_left_on_other_instances?: number;
     /**
      * Whose account this is.
      */
@@ -2489,6 +2503,10 @@ export type ProxyPortInfo = {
  */
 export type ProxyUrlInfo = {
     ports: Array<ProxyPortInfo>;
+    /**
+     * The VM's SSH address through the bastion. Empty when the server has
+     * no bastion (a Mac cove built without the embedded Warpgate).
+     */
     ssh_url: string;
     vm_name: string;
     /**
@@ -3385,7 +3403,7 @@ export type TrafficMonitorBackend = 'ebpf' | 'relay' | 'none' | 'unknown';
 /**
  * Whether the traffic monitor is running.
  */
-export type TrafficMonitorState = 'loaded' | 'unavailable' | 'disabled' | 'not_compiled' | 'unsupported' | 'unknown';
+export type TrafficMonitorState = 'loaded' | 'unavailable' | 'disabled' | 'not_compiled' | 'wake_stopped' | 'unsupported' | 'unknown';
 
 /**
  * What watches guest traffic for auto-pause and wake on this daemon.
@@ -8867,6 +8885,10 @@ export type GetVmConsoleErrors = {
      */
     404: ApiError;
     /**
+     * The VM is not running, or is still being created (retry once its create finishes; see `GET /api/vms/{name}/events`).
+     */
+    409: ApiError;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -8923,6 +8945,10 @@ export type StreamVmConsoleErrors = {
      * No such VM, or not visible to the caller.
      */
     404: ApiError;
+    /**
+     * The VM is not running, or is still being created (retry once its create finishes; see `GET /api/vms/{name}/events`).
+     */
+    409: ApiError;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
@@ -9116,6 +9142,10 @@ export type ExecVmErrors = {
      */
     404: ApiError;
     /**
+     * The VM is not running, or is still being created (retry once its create finishes; see `GET /api/vms/{name}/events`).
+     */
+    409: ApiError;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -9169,6 +9199,10 @@ export type ExecVmWithSecretsErrors = {
      * No such VM, or not visible to the caller.
      */
     404: ApiError;
+    /**
+     * The VM is not running, or is still being created (retry once its create finishes; see `GET /api/vms/{name}/events`).
+     */
+    409: ApiError;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
@@ -10177,6 +10211,10 @@ export type ListVmProcessesErrors = {
      */
     404: ApiError;
     /**
+     * The VM is not running, or is still being created (retry once its create finishes; see `GET /api/vms/{name}/events`).
+     */
+    409: ApiError;
+    /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
      * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
@@ -10805,6 +10843,10 @@ export type GetVmStatsErrors = {
      * No such VM, or not visible to the caller.
      */
     404: ApiError;
+    /**
+     * The VM is not running, or is still being created (retry once its create finishes; see `GET /api/vms/{name}/events`).
+     */
+    409: ApiError;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *

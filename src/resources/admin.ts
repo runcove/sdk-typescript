@@ -446,7 +446,10 @@ export class AdminResource {
    * certificates with it (`outcome: "not_found"` when Warpgate has no such
    * role or user, not a failure); then, belt and braces, their
    * SSH keys at Warpgate (`ssh_keys_deleted`), every Warpgate ticket in their
-   * name (`tickets_deleted`) and every live Warpgate session of theirs
+   * name on a target this Cove instance owns (`tickets_deleted`; how many in
+   * their name it left on another instance's targets is
+   * `tickets_left_on_other_instances`, a count, not a failed item) and every
+   * live Warpgate session of theirs
    * (`sessions_closed`), pass after pass until one finds nothing new (three
    * at most); then the credential sweep runs once more, to end what a
    * still-open session created meanwhile; then every team they belong to,

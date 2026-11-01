@@ -77,11 +77,12 @@ new CoveClient({ baseUrl, token: "cvk_..." });
 //    line in current-context there). Works against a deployment that has
 //    NOT enabled the bearer listener. Note: sensitive ops (e.g. delete) may
 //    trigger Warpgate's interactive sudo step-up, which a headless caller
-//    cannot satisfy — use a bearer key for automation. Five admin operations
+//    cannot satisfy — use a bearer key for automation. Eight admin operations
 //    are the exception: they refuse every bearer key with 401 `sudo_required`.
-//    updateVmAgents, bulkStopVms, bulkDeleteVms and deleteAnyCheckpoint need a
-//    ticket or a session; drainHost is never served on the Warpgate-fronted
-//    listener either, so in practice a drain runs on the host's Unix socket.
+//    updateVmAgents, bulkStopVms, bulkDeleteVms, deleteAnyCheckpoint,
+//    offboardUser and enableUser need a ticket or a session; drainHost and
+//    restoreVms are never served on the Warpgate-fronted listener either, so
+//    in practice they run on the host's Unix socket.
 new CoveClient({ baseUrl, ticket: readFileSync(ticketPath, "utf8").trim() });
 
 // 3. A custom strategy — the swap-in point for a future auth model. Implement
@@ -751,11 +752,11 @@ in the REPL, because the web UI has no control for it yet.
 An admin key can still mint and rotate ordinary keys.
 Either refusal is a 403 `PermissionDeniedError`. Each method's JSDoc names its
 scope and notable statuses.
-`drainHost`, `updateVmAgents`, `bulkStopVms`, `bulkDeleteVms` and
-`deleteAnyCheckpoint` refuse every API key, an admin key included, with 401
-`sudo_required` (`AuthenticationError`). The last four need a ticket or a
-session; `drainHost` is never served on the Warpgate-fronted listener, so in
-practice a drain runs on the host's Unix socket.
+`drainHost`, `restoreVms`, `updateVmAgents`, `bulkStopVms`, `bulkDeleteVms`,
+`deleteAnyCheckpoint`, `offboardUser` and `enableUser` refuse every API key, an
+admin key included, with 401 `sudo_required` (`AuthenticationError`). The other
+six need a ticket or a session; `drainHost` and `restoreVms` are never served on
+the Warpgate-fronted listener, so in practice they run on the host's Unix socket.
 
 Every admin operation is served on the external API listener of every host.
 
