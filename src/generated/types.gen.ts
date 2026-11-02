@@ -2197,10 +2197,12 @@ export type OffboardUserReport = {
     /**
      * How many Warpgate tickets in the user's name this run saw on targets
      * another Cove instance owns, on a Warpgate shared with other Cove
-     * instances, counted over all its passes (one that instance removed
-     * during the run is still counted). They are left for that instance's
-     * offboarding, and while any remain Warpgate refuses to delete the
-     * user. A count only, and not a failed item. Only passes that could list
+     * instances, counted over all its passes and the check before the
+     * Warpgate user delete (one that instance removed during the run is
+     * still counted). They are left for that instance's offboarding, and
+     * while any remain the Warpgate user is kept (deleting it would delete
+     * them too; `warpgate_user` is then `failed`). The count itself is not
+     * a failed item. Only passes that could list
      * the targets at Warpgate count (a pass that could not reports a failed
      * ticket item). 0 from a server that predates it, when Cove runs without
      * Warpgate, or when no pass could list the targets.
@@ -2214,6 +2216,15 @@ export type OffboardUserReport = {
      * The VMs the user owns, one result each.
      */
     vms_stopped: Array<OffboardVm>;
+    /**
+     * Set when the person's Warpgate user is kept (`warpgate_user` is then
+     * `failed`) and they hold a Warpgate admin role, naming each: an admin
+     * role lets them give themselves access to this instance's targets
+     * again, and offboarding never takes one away, so a Warpgate admin must
+     * remove it. Also set when their admin roles could not be listed. A
+     * failed item, in a dry run too. Absent from a server that predates it.
+     */
+    warpgate_admin_roles_error?: string | null;
     warpgate_role?: null | OffboardWarpgateRole;
     warpgate_user?: null | OffboardWarpgateUser;
     /**
@@ -2293,7 +2304,9 @@ export type OffboardWarpgateRole = {
 export type OffboardWarpgateRoleOutcome = 'deleted' | 'not_found' | 'failed' | 'unknown';
 
 /**
- * The person's Warpgate user, deleted first in the Warpgate step. A user
+ * The person's Warpgate user, deleted last in the Warpgate step, and kept
+ * while tickets in their name remain on another Cove instance's targets
+ * (deleting it would delete those too). A user
  * API token, password, one-time code or certificate of theirs signs in
  * without the identity provider, and their roles reach every target; all
  * of it goes with the user. If they sign in again through the identity

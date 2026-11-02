@@ -457,9 +457,10 @@ export class AdminResource {
    * deleted). The answer reports each item, still with a 200 when some
    * failed. A failed item is an entry with `ok: false` and an `error`, a VM,
    * a `warpgate_role` or a `warpgate_user` with `outcome: "failed"`, any entry of `cli_sessions_failed` (a CLI
-   * session Warpgate could not delete; it has no `ok`), or a set
+   * session Warpgate could not delete; it has no `ok`), a set
    * `second_sweep_error` (the sweep after the sessions closed failed): run
-   * the call again. Send `{ dry_run: true }` to get the same report with
+   * the call again; or a set `warpgate_admin_roles_error` (a kept Warpgate
+   * user holds a Warpgate admin role, which a Warpgate admin must remove). Send `{ dry_run: true }` to get the same report with
    * nothing changed; a real run is `{ dry_run: false }` (the default) or an
    * empty body, and anything else is a 400. The wrapper always sends an
    * explicit `dry_run`, and rejects with a `TypeError`, sending nothing, when
