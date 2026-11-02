@@ -3697,8 +3697,8 @@ export type VmDetail = {
     degraded_reason?: string | null;
     deletes_in_secs?: number | null;
     /**
-     * Disk image format. `#[serde(default)]` so pre-migration-029 daemons
-     * deserialize cleanly as Qcow2.
+     * Disk image format. A body from a daemon that predates the field
+     * deserializes as Qcow2, the only format such a daemon creates.
      */
     disk_format?: DiskFormat;
     disk_size_gb: number;
