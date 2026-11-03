@@ -10807,9 +10807,9 @@ export type StartVmErrors = {
      */
     404: ApiError;
     /**
-     * Invalid state transition (e.g. already running). One shape only, the `ApiError` envelope: start does re-apply an elastic VM's target size after spawning, and that grow can be refused on capacity — but the refusal is logged and discarded, leaving the VM at its base size, so it never reaches this response.
+     * Invalid state transition (e.g. already running), or an admission/quota denial: a start is admitted against the caller's quota for the VM's memory and vCPUs before core is asked, and a refusal leaves the VM stopped. The two answer with different bodies, so the schema is a union of both: a state conflict returns the `ApiError` envelope, a denial returns a `DenyReason` carrying the numbers behind the refusal. Start does re-apply an elastic VM's target size after spawning, and that grow can be refused on capacity, but the refusal is logged and discarded, leaving the VM at its base size, so it never reaches this response.
      */
-    409: ApiError;
+    409: VmConflictResponse;
     /**
      * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
      *
