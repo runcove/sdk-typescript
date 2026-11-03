@@ -1442,6 +1442,13 @@ export type HealthResponse = {
     api_version?: number;
     build_info?: null | BuildInfo;
     min_cli_version?: string;
+    /**
+     * Set while this daemon refuses every OCI image reference because it
+     * could not build its registry client, saying so and why. `status`
+     * stays `ok`: its VMs and golden images still work. Absent otherwise, and
+     * from servers that predate the field.
+     */
+    oci_refused?: string | null;
     pool_available: number;
     server_version?: string;
     status: string;
