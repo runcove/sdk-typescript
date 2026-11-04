@@ -1776,7 +1776,7 @@ export type LocalStatus = {
      * (VZ wires running guests' memory, and the Mac's own wired memory is in
      * it too). Absent when it couldn't be read, and from older daemons.
      */
-    guest_ram_held_mb?: number | null;
+    guest_ram_wired_mb?: number | null;
     image_update?: null | ImageUpdate;
     /**
      * The data volume's free bytes, present only while they are below
