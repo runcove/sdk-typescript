@@ -19,7 +19,10 @@ import { fileURLToPath } from "node:url";
  * covers them (spec R4): operationId -> why it is not wrapped yet. Empty unless such a pull
  * request is in flight; the lane that adds the SDK methods removes the entry.
  */
-const PENDING_OTHER_LANE = new Map([]);
+const PENDING_OTHER_LANE = new Map([
+  ["putTeamAdmin", "wrapped with the shell and CLI's `team admin add|rm`"],
+  ["deleteTeamAdmin", "wrapped with the shell and CLI's `team admin add|rm`"],
+]);
 
 // ---------------------------------------------------------------------------
 // 1a — the contract

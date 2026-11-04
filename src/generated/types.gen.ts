@@ -3365,6 +3365,17 @@ export type TeamQuota = {
 };
 
 /**
+ * The answer to a team admin grant or revoke.
+ */
+export type TeamRoleChangeResponse = {
+    /**
+     * False when the member already had that role: nothing changed and no
+     * audit row was written.
+     */
+    changed: boolean;
+};
+
+/**
  * One team row for `cove team ls`.
  *
  * This is the ONE `TeamSummary` — no server-side duplicate exists
@@ -7329,6 +7340,118 @@ export type DeleteTeamResponses = {
 };
 
 export type DeleteTeamResponse = DeleteTeamResponses[keyof DeleteTeamResponses];
+
+export type DeleteTeamAdminData = {
+    body?: never;
+    path: {
+        /**
+         * Team name.
+         */
+        name: string;
+        /**
+         * The member.
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/teams/{name}/admins/{username}';
+};
+
+export type DeleteTeamAdminErrors = {
+    /**
+     * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     */
+    401: ApiError;
+    /**
+     * Non-admin caller (`admin_required`).
+     */
+    403: ApiError;
+    /**
+     * No such team or member (`resource_not_found`).
+     */
+    404: ApiError;
+    /**
+     * Not a valid user name; machine principals hold no role (`validation_failed`).
+     */
+    422: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type DeleteTeamAdminError = DeleteTeamAdminErrors[keyof DeleteTeamAdminErrors];
+
+export type DeleteTeamAdminResponses = {
+    /**
+     * Whether the role changed.
+     */
+    200: TeamRoleChangeResponse;
+};
+
+export type DeleteTeamAdminResponse = DeleteTeamAdminResponses[keyof DeleteTeamAdminResponses];
+
+export type PutTeamAdminData = {
+    body?: never;
+    path: {
+        /**
+         * Team name.
+         */
+        name: string;
+        /**
+         * The member.
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/teams/{name}/admins/{username}';
+};
+
+export type PutTeamAdminErrors = {
+    /**
+     * No usable credential. The bearer listener answers this before the operation runs when the `Authorization` header is missing (`credential_missing`), unparseable or unknown (`credential_invalid`), or past its expiry (`credential_expired`); other listeners answer it when the request carries no resolvable identity (`identity_missing`).
+     */
+    401: ApiError;
+    /**
+     * Non-admin caller (`admin_required`), or the person is disabled (`user_disabled`).
+     */
+    403: ApiError;
+    /**
+     * No such team or member (`resource_not_found`).
+     */
+    404: ApiError;
+    /**
+     * Not a valid user name; machine principals hold no role (`validation_failed`).
+     */
+    422: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type PutTeamAdminError = PutTeamAdminErrors[keyof PutTeamAdminErrors];
+
+export type PutTeamAdminResponses = {
+    /**
+     * Whether the role changed.
+     */
+    200: TeamRoleChangeResponse;
+};
+
+export type PutTeamAdminResponse = PutTeamAdminResponses[keyof PutTeamAdminResponses];
 
 export type ListTeamMembersData = {
     body?: never;

@@ -177,6 +177,7 @@ export type {
   TeamDeleteOutcome,
   TeamMemberEntry,
   TeamQuota,
+  TeamRoleChangeResponse,
   TeamSummary,
   TestDeliveryResult,
   TrafficMonitorBackend,
