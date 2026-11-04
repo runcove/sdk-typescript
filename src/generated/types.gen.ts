@@ -3317,6 +3317,22 @@ export type TagSummary = {
 };
 
 /**
+ * The answer to a team admin revoke.
+ */
+export type TeamAdminRevokeResponse = {
+    /**
+     * False when the member was not the admin: nothing changed and no audit
+     * row was written.
+     */
+    changed: boolean;
+    /**
+     * The ids of the active, unexpired team keys this person minted for this team. They
+     * keep working; a fleet admin or a remaining team admin rotates any that should not.
+     */
+    team_keys_minted: Array<string>;
+};
+
+/**
  * Fail-loud team-deletion outcome.
  *
  * This is the ONE `TeamDeleteOutcome` that gets `ToSchema`. The
@@ -5462,7 +5478,7 @@ export type ListApiKeysData = {
     path?: never;
     query?: {
         /**
-         * List a team's keys instead (admin only).
+         * List a team's keys instead (a fleet admin or that team's admin, also from a personal key).
          */
         team?: string;
         /**
@@ -5483,7 +5499,7 @@ export type ListApiKeysErrors = {
      */
     401: ApiError;
     /**
-     * Non-admin requested `?team=` or `?service=true`.
+     * `?team=` from anyone but a fleet admin or that team's admin, or `?service=true` from a non-admin.
      */
     403: ApiError;
     /**
@@ -5537,7 +5553,7 @@ export type CreateApiKeyErrors = {
      */
     401: SensitiveOpUnauthorizedResponse;
     /**
-     * Team-key or service-key mint by a non-admin, or an admin-key mint (`admin_key: true`) by a non-admin or from any API key rather than a signed-in session.
+     * Team-key mint by anyone but a fleet admin or that team's admin, or by that team's admin from an API key rather than a signed-in session; service-key mint by a non-admin; or an admin-key mint (`admin_key: true`) by a non-admin or from any API key rather than a signed-in session.
      */
     403: ApiError;
     /**
@@ -5678,7 +5694,7 @@ export type RotateApiKeyErrors = {
      */
     401: SensitiveOpUnauthorizedResponse;
     /**
-     * An admin key rotated from any API key (`admin_required`); or the key lacks `keys:manage` (`scope_denied`).
+     * An admin key rotated from any API key, or a team key rotated from an API key by that team's admin (`admin_required`); or the key lacks `keys:manage` (`scope_denied`).
      */
     403: ApiError;
     /**
@@ -7390,9 +7406,9 @@ export type DeleteTeamAdminError = DeleteTeamAdminErrors[keyof DeleteTeamAdminEr
 
 export type DeleteTeamAdminResponses = {
     /**
-     * Whether the role changed.
+     * Whether the role changed, and the team keys this person minted, which keep working.
      */
-    200: TeamRoleChangeResponse;
+    200: TeamAdminRevokeResponse;
 };
 
 export type DeleteTeamAdminResponse = DeleteTeamAdminResponses[keyof DeleteTeamAdminResponses];

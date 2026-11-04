@@ -174,6 +174,7 @@ export type {
   TagEntry,
   TagFilter,
   TagSummary,
+  TeamAdminRevokeResponse,
   TeamDeleteOutcome,
   TeamMemberEntry,
   TeamQuota,

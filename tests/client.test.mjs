@@ -12,6 +12,7 @@ import {
   CoveConnectionError,
   CoveError,
   CoveTimeoutError,
+  COVE_API_VERSION,
   NotFoundError,
 } from "../dist/index.js";
 
@@ -45,7 +46,7 @@ test("builds URL against baseUrl (trailing slash stripped) and sets standard hea
   assert.equal(calls[0].url, "https://cove.test/api/vms");
   const headers = calls[0].init.headers;
   assert.equal(headers.get("Authorization"), "Bearer cvk_x");
-  assert.equal(headers.get("X-Cove-Api-Version"), "8");
+  assert.equal(headers.get("X-Cove-Api-Version"), COVE_API_VERSION);
   assert.equal(headers.get("Accept"), "application/json");
 });
 
@@ -609,7 +610,7 @@ test("caller headers cannot displace the SDK's own", async () => {
   assert.equal(headers.get("Authorization"), "Bearer cvk_x");
   assert.equal(headers.get("Accept"), "application/json");
   assert.equal(headers.get("Content-Type"), "application/json");
-  assert.equal(headers.get("X-Cove-Api-Version"), "8");
+  assert.equal(headers.get("X-Cove-Api-Version"), COVE_API_VERSION);
 });
 
 test("a malformed caller header is refused as a CoveError, not a bare TypeError", async () => {
