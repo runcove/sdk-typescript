@@ -1771,6 +1771,12 @@ export type LocalStatus = {
      * RAM couldn't be read at daemon start.
      */
     guest_ram_cap_mb?: number | null;
+    /**
+     * The memory wired on this Mac now, in MB: what the cap counts against
+     * (VZ wires running guests' memory, and the Mac's own wired memory is in
+     * it too). Absent when it couldn't be read, and from older daemons.
+     */
+    guest_ram_held_mb?: number | null;
     image_update?: null | ImageUpdate;
     /**
      * The data volume's free bytes, present only while they are below
