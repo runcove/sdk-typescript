@@ -20,8 +20,8 @@ import { fileURLToPath } from "node:url";
  * request is in flight; the lane that adds the SDK methods removes the entry.
  */
 const PENDING_OTHER_LANE = new Map([
-  ["putTeamAdmin", "wrapped with the shell and CLI's `team admin add|rm`"],
-  ["deleteTeamAdmin", "wrapped with the shell and CLI's `team admin add|rm`"],
+  ["putTeamAdmin", "the shell and CLI `team admin add|rm` shipped without it; a method, types and tests are a pull request of their own"],
+  ["deleteTeamAdmin", "the shell and CLI `team admin add|rm` shipped without it; a method, types and tests are a pull request of their own"],
 ]);
 
 // ---------------------------------------------------------------------------

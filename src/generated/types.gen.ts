@@ -2479,6 +2479,13 @@ export type ProfileSummary = {
     quota?: UserQuota;
     roles: Array<string>;
     /**
+     * The teams whose keys the caller can manage as the team's admin: filled
+     * for a person (a session or a personal key), empty for a team key, a
+     * service key or a connected app. It says where to go; it is not a
+     * permission. Absent from servers before API version 9.
+     */
+    team_admin_of?: Array<string>;
+    /**
      * Quota envelopes for every team the caller has a
      * team-attributed VM under (NOT full team membership — see
      * `CoveService::team_quotas_for_user`). Empty for users with no
@@ -2609,6 +2616,11 @@ export type RemovalResponse = {
  */
 export type RemoveMemberOutcome = {
     removed: boolean;
+    /**
+     * When the removed person was the team's admin: the ids of the active
+     * team keys they minted. They keep working. Absent from an older server.
+     */
+    team_keys_minted?: Array<string>;
     unconfirmed_edges?: Array<string>;
     unconfirmed_sessions?: Array<string>;
 };
@@ -3363,6 +3375,11 @@ export type TeamMemberEntry = {
      * are, so the field is absent.
      */
     added_by?: string | null;
+    /**
+     * `"admin"` for a team admin, `"member"` otherwise. Absent from a server
+     * that predates team admins (before API version 9).
+     */
+    role?: string | null;
     username: string;
 };
 
