@@ -123,6 +123,13 @@ export type ApiScope =
   | "teams:write"
   | "audit:read"
   | "keys:manage"
+  /**
+   * Create a VM with nested virtualisation (`nested_virt: true` on
+   * `POST /vms`), or clone a VM that has it, as a person in the server's
+   * `[auth] nested_virt_users`. Needed IN ADDITION to `vms:write`, and it does
+   * nothing for anyone not on that list, and a team key never holds it.
+   */
+  | "vms:nested-virt"
   /** Back-compat superset: satisfies every `admin:...` permission below. */
   | "admin"
   | "admin:users:read"

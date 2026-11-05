@@ -978,8 +978,8 @@ export type CreateVmRequest = {
     name?: string | null;
     /**
      * Expose nested virtualisation (VMX/SVM) to the
-     * new VM's guest. Off unless `true`; administrators only (anyone else is
-     * refused 403). An opted-in VM is always cold-booted, never claimed from
+     * new VM's guest. Off unless `true`; administrators and the accounts in
+     * `[auth] nested_virt_users` only (anyone else is refused 403). An opted-in VM is always cold-booted, never claimed from
      * the warm pool, and keeps the setting across every later cold boot.
      * Additive, backward-compatible: older clients omit the field and get
      * `false`, and `false` is not serialised.
@@ -5711,7 +5711,7 @@ export type RotateApiKeyErrors = {
      */
     401: SensitiveOpUnauthorizedResponse;
     /**
-     * An admin key rotated from any API key, or a team key rotated from an API key by that team's admin (`admin_required`); or the key lacks `keys:manage` (`scope_denied`).
+     * An admin key rotated from any API key, or a team key rotated from an API key by that team's admin (`admin_required`); a `vms:nested-virt` key rotated from any API key, or whose owner is not in `[auth] nested_virt_users`; or the key lacks `keys:manage` (`scope_denied`).
      */
     403: ApiError;
     /**
@@ -8403,7 +8403,7 @@ export type CreateVmErrors = {
      */
     401: ApiError;
     /**
-     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the body sets `nested_virt` and the caller is not in the server's `[auth] admins`, or is an admin whose API key lacks `admin:vms:nested-virt`, and `scope_denied` with `required: "tags:write"` when `initial_tags` is not empty and the key lacks `tags:write` (nothing is reserved). The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
+     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the body sets `nested_virt` and the caller is neither in the server's `[auth] admins` nor in its `[auth] nested_virt_users`, or is an admin whose API key lacks `admin:vms:nested-virt`, or a listed user whose API key lacks `vms:nested-virt`, and `scope_denied` with `required: "tags:write"` when `initial_tags` is not empty and the key lacks `tags:write` (nothing is reserved). The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
      */
     403: ApiError;
     /**
@@ -11349,13 +11349,17 @@ export type SetVmTeamErrors = {
      */
     401: ApiError;
     /**
-     * The VM's owner is not a member of the target team.
+     * The VM's owner is not a member of the target team, or the VM has nested virtualisation and the caller is not an administrator.
      */
     403: ApiError;
     /**
      * No such VM, or not visible to the caller.
      */
     404: ApiError;
+    /**
+     * The VM is still being created; retry once it finishes.
+     */
+    409: ApiError;
     /**
      * The VM is owned by a service key; its team attribution cannot change.
      */
@@ -11584,7 +11588,7 @@ export type CloneVmErrors = {
      */
     401: ApiError;
     /**
-     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the source VM was created with nested virtualisation and the caller, who can see it, is not in the server's `[auth] admins`, or is an admin whose API key lacks `admin:vms:nested-virt`. A caller who cannot see the source gets the 404 instead. It answers `scope_denied` with `required: "tags:write"` when `tags` is not empty and the key lacks `tags:write`, before anything is reserved. The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
+     * Refused. Two producers answer this status. The operation answers `admin_required` (`ApiError`) when the source VM was created with nested virtualisation and the caller, who can see it, is neither in the server's `[auth] admins` nor in its `[auth] nested_virt_users`, or is an admin whose API key lacks `admin:vms:nested-virt`, or a listed user whose API key lacks `vms:nested-virt`. A caller who cannot see the source gets the 404 instead. It answers `scope_denied` with `required: "tags:write"` when `tags` is not empty and the key lacks `tags:write`, before anything is reserved. The bearer listener answers `scope_denied` with `required` before the operation runs when the key lacks `vms:write`.
      */
     403: ApiError;
     /**
