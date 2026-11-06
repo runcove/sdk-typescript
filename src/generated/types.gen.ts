@@ -1244,6 +1244,10 @@ export type ErrorCode = 'validation_failed' | 'internal_error' | 'resource_not_f
  * killed the command's whole process group and `code` is 124. A command
  * that exits 124 on its own has `timed_out: false`. A server built before
  * the field sends `{"code": N}` only; read its absence as `false`.
+ *
+ * `exact` is `false` on a `?encoding=base64` exec whose guest agent predates
+ * protocol 17: it ran the exec as text, so the base64 holds lossy text, not
+ * the command's exact bytes. It is absent when the bytes are exact.
  */
 export type ExecExit = {
     /**
@@ -1251,6 +1255,11 @@ export type ExecExit = {
      * killed by a signal for any other reason.
      */
     code: number;
+    /**
+     * `false` when the output of a base64 exec is lossy text, not the exact
+     * bytes (a guest agent older than protocol 17). Absent when exact.
+     */
+    exact?: boolean | null;
     /**
      * The exec deadline killed the command.
      */
@@ -9297,7 +9306,7 @@ export type ExecVmData = {
     };
     query?: {
         /**
-         * `json` asks for each `stdout` / `stderr` chunk as a JSON string, which carries a carriage return intact. Any other value, or none, gets the raw chunks. A server that predates the parameter ignores it.
+         * `json` asks for each `stdout` / `stderr` chunk as a JSON string, which carries a carriage return intact. `base64` asks for each chunk as the standard base64 of the exact bytes the command wrote, which also carries output that is not UTF-8 (a guest agent older than protocol 17 sends text, so its chunks are the base64 of that text). Any other value, or none, gets the raw chunks. A server that predates the parameter ignores it.
          */
         encoding?: string;
     };
