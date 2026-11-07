@@ -3732,6 +3732,13 @@ export type VmCreateConflictResponse = VmNameTakenBody | DenyReason | ApiError;
  */
 export type VmDetail = {
     /**
+     * What a VM in a steady stored state is doing right now. `"starting"`
+     * while a cold start is waiting for the guest agent, when `state` still
+     * reads `stopped`. Absent otherwise and from older daemons. Read-only
+     * label: it is not a `VmState` and never a state to wait for.
+     */
+    activity?: string | null;
+    /**
      * Capability tokens from the last handshake (`vms.capabilities`).
      */
     agent_capabilities?: Array<string>;
@@ -3975,6 +3982,13 @@ export type VmStats = {
  * GET /vms list item.
  */
 export type VmSummary = {
+    /**
+     * What a VM in a steady stored state is doing right now. `"starting"`
+     * while a cold start is waiting for the guest agent, when `state` still
+     * reads `stopped`. Absent otherwise and from older daemons. Read-only
+     * label: it is not a `VmState` and never a state to wait for.
+     */
+    activity?: string | null;
     created_at?: string | null;
     degraded?: boolean;
     degraded_reason?: string | null;
