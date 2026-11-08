@@ -243,10 +243,9 @@ export type AdminProjectMemberRequest = {
 export type AdminQuotaDefaultsResponse = {
     /**
      * `Some(true)` when the baseline above was derived
-     * from the host Mac's own resources (macOS local mode with no
-     * `[quota]` block in cove.toml), `Some(false)` when it was not (a
-     * `[quota]` block overrides that derivation, or the Mac's figures could
-     * not be read and the compiled-in defaults apply), `None` off local mode — every non-macOS
+     * from the host Mac's own resources (macOS local mode; a `[quota]`
+     * block has no effect there), `Some(false)` when it was not (the Mac's
+     * figures could not be read and the compiled-in defaults apply), `None` off local mode — every non-macOS
      * daemon, which never derives a quota from host resources. Optional so
      * a daemon predating this field, or a non-Mac one, keeps emitting
      * exactly its old JSON (the key is absent, not `false`).
