@@ -8990,6 +8990,10 @@ export type CreateCheckpointErrors = {
      * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
+    /**
+     * The VM could not be snapshotted just now (`unavailable`, the `ApiError` envelope, with no `Retry-After`). Either Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the VM's guest agent did not answer in time: retry after a few seconds.
+     */
+    503: ApiError;
 };
 
 export type CreateCheckpointError = CreateCheckpointErrors[keyof CreateCheckpointErrors];
@@ -9818,6 +9822,10 @@ export type HibernateVmErrors = {
      * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
+    /**
+     * The VM could not be snapshotted just now (`unavailable`, the `ApiError` envelope, with no `Retry-After`). Either Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the VM's guest agent did not answer in time: retry after a few seconds.
+     */
+    503: ApiError;
 };
 
 export type HibernateVmError = HibernateVmErrors[keyof HibernateVmErrors];
@@ -11636,6 +11644,10 @@ export type CloneVmErrors = {
      * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
      */
     429: ApiError;
+    /**
+     * The VM could not be snapshotted just now (`unavailable`, the `ApiError` envelope, with no `Retry-After`). Either Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the VM's guest agent did not answer in time: retry after a few seconds.
+     */
+    503: ApiError;
 };
 
 export type CloneVmError = CloneVmErrors[keyof CloneVmErrors];
