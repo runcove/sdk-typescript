@@ -8990,7 +8990,7 @@ export type CreateCheckpointErrors = {
      */
     429: ApiError;
     /**
-     * The VM could not be snapshotted just now (`unavailable`, the `ApiError` envelope, with no `Retry-After`). Either Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the VM's guest agent did not answer in time: retry after a few seconds.
+     * The VM could not be snapshotted just now, or, for a clone, the new VM could not be set up (`unavailable`, or for a clone also `database_unavailable`; the `ApiError` envelope, with no `Retry-After`). One of three causes. Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the guest agent did not answer in time, on the VM being snapshotted or, for a clone, on the new VM while it was being set up: retry after a few seconds. Or, for a clone, the quota database is down (`database_unavailable`): retry once it is back.
      */
     503: ApiError;
 };
@@ -9822,7 +9822,7 @@ export type HibernateVmErrors = {
      */
     429: ApiError;
     /**
-     * The VM could not be snapshotted just now (`unavailable`, the `ApiError` envelope, with no `Retry-After`). Either Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the VM's guest agent did not answer in time: retry after a few seconds.
+     * The VM could not be snapshotted just now, or, for a clone, the new VM could not be set up (`unavailable`, or for a clone also `database_unavailable`; the `ApiError` envelope, with no `Retry-After`). One of three causes. Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the guest agent did not answer in time, on the VM being snapshotted or, for a clone, on the new VM while it was being set up: retry after a few seconds. Or, for a clone, the quota database is down (`database_unavailable`): retry once it is back.
      */
     503: ApiError;
 };
@@ -11644,7 +11644,7 @@ export type CloneVmErrors = {
      */
     429: ApiError;
     /**
-     * The VM could not be snapshotted just now (`unavailable`, the `ApiError` envelope, with no `Retry-After`). Either Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the VM's guest agent did not answer in time: retry after a few seconds.
+     * The VM could not be snapshotted just now, or, for a clone, the new VM could not be set up (`unavailable`, or for a clone also `database_unavailable`; the `ApiError` envelope, with no `Retry-After`). One of three causes. Cloud Hypervisor is still loading the VM's memory from an on-demand restore (a wake, a fresh clone, a create from a golden image, or an in-place restore), which usually clears within seconds; if it persists, stop and start the VM. Or the guest agent did not answer in time, on the VM being snapshotted or, for a clone, on the new VM while it was being set up: retry after a few seconds. Or, for a clone, the quota database is down (`database_unavailable`): retry once it is back.
      */
     503: ApiError;
 };
