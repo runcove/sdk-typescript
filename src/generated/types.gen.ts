@@ -3811,6 +3811,14 @@ export type VmDetail = {
     memory_min_mb?: number;
     name: string;
     /**
+     * Whether this VM must be restarted before its stored network policy
+     * takes effect: it is under an allowlist its Mac helper does not hold or
+     * does not say it holds, or the stored policy could not be read. Restart
+     * the VM, then set the policy again. Present only for a running or paused
+     * VM on a Mac that needs it.
+     */
+    network_policy_needs_restart?: boolean;
+    /**
      * What the caller may do to this VM: owner and administrator hold every
      * permission, a share or team grant holds its role's. The web UI shows
      * an action only when this lists its permission (`vm.power` for
