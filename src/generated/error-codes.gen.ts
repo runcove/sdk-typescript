@@ -47,6 +47,7 @@ export const ERROR_CODES = [
   "credential_invalid",
   "credential_expired",
   "scope_denied",
+  "destructive_not_granted",
   "sudo_required",
   "ticket_required",
   "user_disabled",
