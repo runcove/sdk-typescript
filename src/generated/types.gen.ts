@@ -2583,6 +2583,20 @@ export type QuotaUsageSize = {
  * Summary of host RAM overcommit numbers, as reported by `GET /host/capacity`.
  */
 export type RamCapacity = {
+    /**
+     * The guest memory this cove instance has committed, in MB: every VM
+     * that holds its guest RAM (creating, running, paused, pooled or
+     * stopping, part way through a pause, resume, checkpoint, hibernate,
+     * wake, forced stop or delete, or being woken; not hibernated, stopped
+     * or failed) at its current size, or its boot size if larger, plus each
+     * live reservation no such VM accounts for. A grow's reservation counts on top of its VM until released.
+     * Compare it with `headroom_mb`, the `[overcommit] ratio` budget.
+     * It covers this instance only: two cove instances on one host each
+     * budget the whole host and neither counts the other's VMs. Reported
+     * only: nothing is refused on it yet. Absent from a server that
+     * predates it.
+     */
+    committed_mb?: number | null;
     headroom_mb: number;
     host_total_mb: number;
     /**
@@ -2594,6 +2608,13 @@ export type RamCapacity = {
     pending_resize_mb: number;
     psi_mem_avg10_pct: number;
     ratio: number;
+    /**
+     * Memory, in MB, held by the live reservations: the short-lived rows a
+     * create, clone, wake or grow holds while it is in flight, released
+     * when it ends. A VM that is already running holds none. A clone, a
+     * grow or a wake is admitted when this sum plus its own memory fits in
+     * `headroom_mb`.
+     */
     reservation_mb: number;
     reserved_mb: number;
     swap_total_mb: number;
