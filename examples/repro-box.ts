@@ -55,7 +55,7 @@ try {
     console.log("checkpoint taken: failing state");
 
     // Role "user" can connect and look; "collaborator" can also stop, start, resize and
-    // checkpoint the VM.
+    // checkpoint the VM, and clone it, including a copy of its memory.
     const grant = await client.vms.grantAccess(name, { subject_type: "user", subject_id: colleague, role: "collaborator" });
     console.log(`gave ${colleague} access${grant.user_known ? "" : " (when they next sign in)"}`);
     console.log(`${colleague} connects with: cove ssh ${name}`);
