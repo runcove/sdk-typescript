@@ -77,10 +77,10 @@ new CoveClient({ baseUrl, token: "cvk_..." });
 //    line in current-context there). Works against a deployment that has
 //    NOT enabled the bearer listener. Note: sensitive ops (e.g. delete) may
 //    trigger Warpgate's interactive sudo step-up, which a headless caller
-//    cannot satisfy — use a bearer key for automation. Eight admin operations
+//    cannot satisfy — use a bearer key for automation. Nine admin operations
 //    are the exception: they refuse every bearer key with 401 `sudo_required`.
 //    updateVmAgents, bulkStopVms, bulkDeleteVms, deleteAnyCheckpoint,
-//    offboardUser and enableUser need a ticket or a session; drainHost and
+//    offboardUser, enableUser and purgeUser need a ticket or a session; drainHost and
 //    restoreVms are never served on the Warpgate-fronted listener either, so
 //    in practice they run on the host's Unix socket.
 new CoveClient({ baseUrl, ticket: readFileSync(ticketPath, "utf8").trim() });
@@ -753,9 +753,9 @@ An admin key can still mint and rotate ordinary keys.
 Either refusal is a 403 `PermissionDeniedError`. Each method's JSDoc names its
 scope and notable statuses.
 `drainHost`, `restoreVms`, `updateVmAgents`, `bulkStopVms`, `bulkDeleteVms`,
-`deleteAnyCheckpoint`, `offboardUser` and `enableUser` refuse every API key, an
-admin key included, with 401 `sudo_required` (`AuthenticationError`). The other
-six need a ticket or a session; `drainHost` and `restoreVms` are never served on
+`deleteAnyCheckpoint`, `offboardUser`, `enableUser` and `purgeUser` refuse every
+API key, an admin key included, with 401 `sudo_required` (`AuthenticationError`).
+The other seven need a ticket or a session; `drainHost` and `restoreVms` are never served on
 the Warpgate-fronted listener, so in practice they run on the host's Unix socket.
 
 Every admin operation is served on the external API listener of every host.
@@ -765,7 +765,7 @@ Every admin operation is served on the external API listener of every host.
 | Fleet | `updateAutoPauseTimeouts`, `drainHost`, `getHostState`, `updateVmAgents`, `bulkStopVms`, `bulkDeleteVms` |
 | Projects | `listProjectMembers`, `createProjectMember`, `deleteProjectMember` |
 | Quotas | `getQuotaDefaults`, `getUserQuotaOverride`, `updateUserQuotaOverride`, `deleteUserQuotaOverride`, `createQuotaBypass`, `getTeamQuotaOverride`, `updateTeamQuotaOverride`, `deleteTeamQuotaOverride` |
-| Users | `listAllUsers`, `getUser`, `revokeUserSessions`, `offboardUser`, `enableUser` |
+| Users | `listAllUsers`, `getUser`, `revokeUserSessions`, `offboardUser`, `enableUser`, `purgeUser` |
 | Host-wide listings | `listAllVms` / `iterAllVms`, `listAnyCheckpoints` / `iterAnyCheckpoints`, `deleteAnyCheckpoint` |
 
 ```ts

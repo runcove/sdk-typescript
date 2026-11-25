@@ -318,6 +318,65 @@ test("admin.enableUser posts to /api/admin/users/{username}/enable", async () =>
   assert.deepEqual(out, cleared);
 });
 
+test("admin.purgeUser posts an explicit dry_run to /api/admin/users/{username}/purge", async () => {
+  const report = {
+    username: "a b",
+    dry_run: true,
+    deleted: [{ table: "users", rows: 1 }],
+    left_in_place: "Left in place: the audit log; their name as the actor on other records.",
+  };
+  const { calls, impl } = fakeFetch(json(report));
+  const out = await makeClient(impl).admin.purgeUser("a b", { dry_run: true });
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(pathOf(calls[0]), "/api/admin/users/a%20b/purge");
+  assert.deepEqual(JSON.parse(calls[0].init.body), { dry_run: true });
+  assert.deepEqual(out, report);
+
+  const real = fakeFetch(json({ ...report, dry_run: false }));
+  await makeClient(real.impl).admin.purgeUser("a b");
+  assert.deepEqual(JSON.parse(real.calls[0].init.body), { dry_run: false });
+
+  const none = fakeFetch(json(report));
+  await assert.rejects(
+    makeClient(none.impl).admin.purgeUser("a b", { dry_run: "yes" }),
+    TypeError,
+  );
+  assert.equal(none.calls.length, 0);
+});
+
+// What a stored user name becomes on the wire for offboard, enable and purge: one
+// percent-encoded segment; a dot or empty name is refused before anything is sent. This is
+// the rule the CLI's client applies to the same three verbs.
+test("admin user verbs send the name as one encoded segment, and refuse dot and empty names", async () => {
+  const names = [
+    ["x/../alice", "x%2F..%2Falice"],
+    ["a b", "a%20b"],
+    ["a%b", "a%25b"],
+    ["<public>", "%3Cpublic%3E"],
+    ["a\0b", "a%00b"],
+  ];
+  const verbs = {
+    offboard: (a, n) => a.offboardUser(n, { dry_run: true }),
+    enable: (a, n) => a.enableUser(n),
+    purge: (a, n) => a.purgeUser(n, { dry_run: true }),
+  };
+  for (const [name, wire] of names) {
+    for (const [verb, call] of Object.entries(verbs)) {
+      const { calls, impl } = fakeFetch(json({ code: "resource_not_found", message: "x" }, 404));
+      await assert.rejects(call(makeClient(impl).admin, name));
+      const raw = new URL(calls[0].url).pathname;
+      assert.equal(raw, `/api/admin/users/${wire}/${verb}`, `${verb} ${JSON.stringify(name)}`);
+    }
+  }
+  for (const bad of ["..", ".", ""]) {
+    for (const [verb, call] of Object.entries(verbs)) {
+      const { calls, impl } = fakeFetch(json({}));
+      await assert.rejects(async () => call(makeClient(impl).admin, bad), undefined, `${verb} ${JSON.stringify(bad)}`);
+      assert.equal(calls.length, 0, `${verb} ${JSON.stringify(bad)}`);
+    }
+  }
+});
+
 test("admin.offboardUser posts dry_run to /api/admin/users/{username}/offboard", async () => {
   const report = {
     username: "a b",

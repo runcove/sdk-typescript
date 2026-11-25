@@ -2559,6 +2559,64 @@ export type ProxyUrlInfo = {
     web_url?: string | null;
 };
 
+/**
+ * `POST /api/admin/users/{username}/purge` response: the leftover rows of
+ * an offboarded person, deleted or (in a dry run) counted. The purge deletes
+ * records about the person and changes no record that belongs to someone
+ * else; `left_in_place` says what still names them.
+ */
+export type PurgeUserReport = {
+    /**
+     * Every table the purge deletes from, with the rows it deleted (or would
+     * delete); a table with none is listed with zero.
+     */
+    deleted: Array<PurgedRows>;
+    /**
+     * True when nothing was deleted and this is only what would be.
+     */
+    dry_run: boolean;
+    /**
+     * What the purge leaves in place and where the person's name remains: the
+     * audit log, their name as the actor on records that belong to other
+     * people or to teams, and the service keys that were bound to them. The
+     * same text on a dry run and a real run.
+     */
+    left_in_place: string;
+    /**
+     * The person, as Cove has them stored: the one spelling their rows carry
+     * (in the `users` table or any other that names a person), or else the
+     * shut-out record's.
+     */
+    username: string;
+};
+
+/**
+ * `POST /api/admin/users/{username}/purge` request body. An absent body
+ * means `{"dry_run": false}`; a body must carry `dry_run`. An unknown field
+ * is refused, so a misspelt `dry_run` can never run the real purge.
+ */
+export type PurgeUserRequest = {
+    /**
+     * Report what the purge would delete and change nothing. Required in a
+     * body; only an absent body means `false`.
+     */
+    dry_run: boolean;
+};
+
+/**
+ * What a purge deleted (or, in a dry run, would delete) from one table.
+ */
+export type PurgedRows = {
+    /**
+     * How many rows.
+     */
+    rows: number;
+    /**
+     * The table the rows are in.
+     */
+    table: string;
+};
+
 export type PutPrimaryPortBody = {
     port: number;
 };
@@ -5240,6 +5298,10 @@ export type EnableUserData = {
 
 export type EnableUserErrors = {
     /**
+     * The username is empty or contains a NUL character (`validation_failed`); nothing ran.
+     */
+    400: ApiError;
+    /**
      * Interactive login is too old for this operation, or the caller used an API key (`{code: "sudo_required", message, reauth_window_secs}`, with `WWW-Authenticate: cove-reauth realm="sudo"`), or no usable credential at all (`credential_missing` / `credential_invalid` / `credential_expired`). The two answer with different bodies, so the schema is a union of both.
      */
     401: SensitiveOpUnauthorizedResponse;
@@ -5291,7 +5353,7 @@ export type OffboardUserData = {
 
 export type OffboardUserErrors = {
     /**
-     * The body is neither empty nor a JSON object sent as `application/json` whose only field is a boolean `dry_run` (`validation_failed`); nothing ran.
+     * The username is empty or contains a NUL character, or the body is neither empty nor a JSON object sent as `application/json` whose only field is a boolean `dry_run` (`validation_failed`); nothing ran.
      *
      * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
      */
@@ -5334,6 +5396,67 @@ export type OffboardUserResponses = {
 };
 
 export type OffboardUserResponse = OffboardUserResponses[keyof OffboardUserResponses];
+
+export type PurgeUserData = {
+    /**
+     * Optional; `{"dry_run": true}` counts without deleting. A real run is an empty body or `{"dry_run": false}`; anything else is refused.
+     */
+    body?: PurgeUserRequest;
+    path: {
+        /**
+         * Whose leftover records to delete.
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/users/{username}/purge';
+};
+
+export type PurgeUserErrors = {
+    /**
+     * The username is empty or contains a NUL character, or the body is neither empty nor a JSON object sent as `application/json` whose only field is a boolean `dry_run` (`validation_failed`); nothing ran.
+     *
+     * The request could not be decoded: a JSON body that is not valid JSON, is sent without `Content-Type: application/json`, or has a field of the wrong type or an unknown enum value; or a query or path parameter of the wrong type, or a path segment whose percent-encoding is not UTF-8 (such as `%FF`). Answered with code `validation_failed` — never 415 or 422 — with the decoder's description in `message` and, where there is one, the offending field in `field` (a dotted path for a nested body field, such as `auto_pause_policy.type`).
+     */
+    400: ApiError;
+    /**
+     * Interactive login is too old for this operation, or the caller used an API key (`{code: "sudo_required", message, reauth_window_secs}`, with `WWW-Authenticate: cove-reauth realm="sudo"`), or no usable credential at all (`credential_missing` / `credential_invalid` / `credential_expired`). The two answer with different bodies, so the schema is a union of both.
+     */
+    401: SensitiveOpUnauthorizedResponse;
+    /**
+     * Caller is not an administrator: the operation's own gate answers `{code: "admin_required"}`.
+     */
+    403: ApiError;
+    /**
+     * Cove has no record of this name: no user record, shut-out marker or anything live that names it.
+     */
+    404: ApiError;
+    /**
+     * Refused, nothing changed (`validation_failed`): the person is not offboarded, something of theirs is still live, the name is in `[auth] admins` or `[auth] nested_virt_users` (any ASCII case), no offboarding run has finished having kept nothing since the last one started (offboard again), a secret is left in their own scope or the listing failed, a configured Warpgate has a user under the name (any letter case) or could not be asked, a deleted VM's name is still held after the delete or its rename has not finished (wait, then purge again), the name is a `svc:` or `team:` principal or the caller's own, or it is stored in more than one spelling (case only) in any table that holds a person.
+     */
+    422: ApiError;
+    /**
+     * The client declared an API version this server no longer serves. `min_cli_version` names the oldest cove-cli release that speaks it; `cove-cli` matches the `CLI_TOO_OLD` code verbatim to trigger its own self-update, which is why that spelling is exempt from the snake_case convention the rest of the catalogue follows.
+     *
+     * A release that removes wire spellings refuses every older client, since accepting one would let its request through and then answer in shapes it cannot parse; a release that only adds, as API version 6 does, still serves a client one version back. On the bearer-authenticated listener the refusal fires only when the client actually declares a version — an unversioned caller (CI, `curl`) is not part of the negotiation and passes.
+     */
+    426: CliTooOldBody;
+    /**
+     * Too many requests. The external bearer listener allows each source IP (an IPv6 client per /64) a per-second budget per route group, set by `[api.limits.<group>] per_ip` (`[api] rate_limit_per_ip` by default); every caller behind one NAT or proxy shares it. It can also allow each credential a budget of its own (`per_token`). The body is the `ApiError` envelope with `code` `rate_limited`, its `message` saying which budget was spent; wait the `Retry-After` seconds, then resend.
+     */
+    429: ApiError;
+};
+
+export type PurgeUserError = PurgeUserErrors[keyof PurgeUserErrors];
+
+export type PurgeUserResponses = {
+    /**
+     * The rows deleted per table (or, in a dry run, that would be), and what is left in place (`left_in_place`).
+     */
+    200: PurgeUserReport;
+};
+
+export type PurgeUserResponse = PurgeUserResponses[keyof PurgeUserResponses];
 
 export type RevokeUserSessionsData = {
     body?: never;

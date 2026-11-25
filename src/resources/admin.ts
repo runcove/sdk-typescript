@@ -24,6 +24,8 @@ import type {
   OffboardUserReport,
   OffboardUserRequest,
   ProjectMember,
+  PurgeUserReport,
+  PurgeUserRequest,
   RestoreVmsRequest,
   RestoreVmsResponse,
   RevokeSessionsResponse,
@@ -76,10 +78,10 @@ function offboardRequestError(req: unknown): string | undefined {
  * A 404 means absent or not yours; the SDK never turns it into "forbidden".
  * Every operation here is served on the external API listener of every host.
  *
- * Eight refuse every API key, an admin key included, with 401 `sudo_required`.
+ * Nine refuse every API key, an admin key included, with 401 `sudo_required`.
  * {@link updateVmAgents}, {@link bulkStopVms}, {@link bulkDeleteVms},
- * {@link deleteAnyCheckpoint}, {@link offboardUser}, {@link enableUser} and
- * {@link restoreVms} need a recent interactive sign-in, so they run
+ * {@link deleteAnyCheckpoint}, {@link offboardUser}, {@link enableUser},
+ * {@link purgeUser} and {@link restoreVms} need a recent interactive sign-in, so they run
  * with a ticket or a session, never a key. {@link drainHost} is never served
  * on the Warpgate-fronted listener either: in practice a drain runs on the
  * host's Unix socket.
@@ -508,6 +510,49 @@ export class AdminResource {
       "POST",
       apiPath`/api/admin/users/${username}/enable`,
       overrides,
+    );
+  }
+
+  /**
+   * Delete an offboarded person's leftover records (their user record,
+   * records of deleted VMs, revoked keys and the like, quota limits and the
+   * shut-out marker) in one transaction. Answers the rows per table and, in
+   * `left_in_place`, what stays: it changes no record that belongs to someone
+   * else, so the audit log and the person's name as the actor on others' and
+   * teams' records are kept. `{ dry_run: true }` counts them and deletes nothing; the
+   * wrapper always sends an explicit `dry_run` and rejects with a `TypeError`,
+   * sending nothing, when `req` is not a plain object whose only field is a
+   * boolean `dry_run`. A completed purge, dry run included, writes a
+   * `user.purged` audit row; a refused one changes nothing and writes none.
+   * The name is matched regardless of ASCII case and not checked against the
+   * username rules. Scope: `admin:sessions:write`. 403 not an administrator;
+   * 404 a name Cove has no record of; 422 the person is not offboarded,
+   * something of theirs is still live, the name is in `[auth] admins` or
+   * `[auth] nested_virt_users` in any ASCII case (take it out of the list
+   * first), no offboarding run has finished having kept nothing (offboard
+   * them again), a secret is left in their own scope or those secrets cannot
+   * be listed, a configured Warpgate has a user under the name, cannot be
+   * asked or has no client in the daemon, the name of a deleted VM of theirs
+   * is still held after the delete or a rename of one has not finished (for
+   * those two, purge again later), or the name is a principal, the caller's
+   * own, or stored in more than one spelling in any table.
+   * 401 `sudo_required` for every API key, an admin key included: it needs a
+   * ticket or a session (`AuthenticationError`).
+   */
+  purgeUser(
+    username: string,
+    req: Partial<PurgeUserRequest> = {},
+    overrides: RequestOverrides = {},
+  ): Promise<PurgeUserReport> {
+    const bad = offboardRequestError(req);
+    if (bad !== undefined) {
+      return Promise.reject(new TypeError(`purgeUser: ${bad}`));
+    }
+    const body: PurgeUserRequest = { dry_run: req.dry_run === true };
+    return this.http.request<PurgeUserReport>(
+      "POST",
+      apiPath`/api/admin/users/${username}/purge`,
+      { ...overrides, body },
     );
   }
 
