@@ -4082,6 +4082,13 @@ export type VmSummary = {
     ip_address?: string | null;
     name: string;
     /**
+     * The VM's stored network policy needs a restart to take effect, as
+     * the same field in the VM's detail says. Sent only when
+     * true; absent from a Linux daemon and from older daemons, which read
+     * as false.
+     */
+    network_policy_needs_restart?: boolean;
+    /**
      * Number of active shares (grants) on this VM — user + team subjects.
      * `0` when unshared or on legacy daemons; the owned-VM
      * list row renders a "shared" badge when `> 0`. `#[serde(default)]` so
