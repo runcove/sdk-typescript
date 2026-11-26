@@ -900,7 +900,7 @@ export type CreateKeyRequest = {
     /**
      * Omit (or send `null`) for the default set (`vms:read`, `vms:write`,
      * `vms:exec`, `files:read`, `files:write`, `checkpoints:write`,
-     * `tags:read`, `tags:write`). An empty
+     * `tags:read`, `tags:write`, `network:read`). An empty
      * array is refused (422).
      */
     scopes?: Array<string> | null;
@@ -5733,7 +5733,7 @@ export type ListApiKeysResponse = ListApiKeysResponses[keyof ListApiKeysResponse
 
 export type CreateApiKeyData = {
     /**
-     * Label, optional scopes (omitted = the default set: vms:read, vms:write, vms:exec, files:read, files:write, checkpoints:write, tags:read, tags:write; an empty list is refused with 422), optional expiry, optional team, optional admin_key, optional service (with team or member).
+     * Label, optional scopes (omitted = the default set: vms:read, vms:write, vms:exec, files:read, files:write, checkpoints:write, tags:read, tags:write, network:read; an empty list is refused with 422), optional expiry, optional team, optional admin_key, optional service (with team or member).
      */
     body: CreateKeyRequest;
     path?: never;
@@ -5751,7 +5751,7 @@ export type CreateApiKeyErrors = {
      */
     401: SensitiveOpUnauthorizedResponse;
     /**
-     * Team-key mint by anyone but a fleet admin or that team's admin, or by that team's admin from an API key rather than a signed-in session; service-key mint by a non-admin; or an admin-key mint (`admin_key: true`) by a non-admin or from any API key rather than a signed-in session.
+     * Team-key mint by anyone but a fleet admin or that team's admin, or by that team's admin from an API key rather than a signed-in session; service-key mint by a non-admin; an admin-key mint (`admin_key: true`) by a non-admin or from any API key rather than a signed-in session; or a mint of a personal key holding `network:write` from any API key rather than a signed-in session.
      */
     403: ApiError;
     /**
@@ -5892,7 +5892,7 @@ export type RotateApiKeyErrors = {
      */
     401: SensitiveOpUnauthorizedResponse;
     /**
-     * An admin key rotated from any API key, or a team key rotated from an API key by that team's admin (`admin_required`); a `vms:nested-virt` key rotated from any API key, or whose owner is not in `[auth] nested_virt_users`; or the key lacks `keys:manage` (`scope_denied`).
+     * An admin key rotated from any API key, or a team key rotated from an API key by that team's admin (`admin_required`); a `vms:nested-virt` key rotated from any API key, or whose owner is not in `[auth] nested_virt_users`; a `network:write` key rotated from any API key; or the key lacks `keys:manage` (`scope_denied`).
      */
     403: ApiError;
     /**

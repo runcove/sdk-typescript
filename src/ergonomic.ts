@@ -119,6 +119,8 @@ export type ApiScope =
   | "files:write"
   | "access:read"
   | "access:write"
+  | "network:read"
+  | "network:write"
   | "teams:read"
   | "teams:write"
   | "audit:read"
